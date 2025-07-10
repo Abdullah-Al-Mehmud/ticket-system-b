@@ -1,8 +1,10 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request; // Make sure this is imported
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ],
         );
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //
+    ->withExceptions(function (Exceptions $exceptions) {
+        // Corrected argument order: $e (Exception) first, $request (Request) second
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+          
+            if($e->getMessage() === 'Unauthenticated.' ){
+                return response()->json(['message'=> 'You are not Authorize'],404);
+            }
+
+            // For web requests, still redirect to login
+            return response()->json(['message'=> $e->getMessage()],500);
+        });
     })->create();

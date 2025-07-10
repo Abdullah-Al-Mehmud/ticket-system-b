@@ -25,10 +25,14 @@ Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout
 Route::prefix('admin')->middleware(['auth:api', 'role:admin'])->group(function () {
     //Admin Dashboard
     Route::get('/test', function () {
-        return response()->json([
-            "status" => true,
-            "message" => "admin API Successfully Work"
-        ]);
+        try {
+            return response()->json([
+                "status" => true,
+                "message" => "admin API Successfully Work"
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()]);
+        }
     });
 });
 
