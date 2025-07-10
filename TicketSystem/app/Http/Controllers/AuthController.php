@@ -60,6 +60,18 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'token' => $token,
             'token_type' => 'bearer',
-        ],200);
+        ], 200);
+    }
+
+    //LogOut User
+    public function logout()
+    {
+        Auth::guard('api')->logout();
+
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Logged out successfully',
+        ]);
     }
 }

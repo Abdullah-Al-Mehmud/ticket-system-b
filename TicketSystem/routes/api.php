@@ -14,6 +14,9 @@ Route::post('/register', [AuthController::class, 'register'])->name('register');
 //Login System
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
+//Logout System
+Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
+
 
 
 
