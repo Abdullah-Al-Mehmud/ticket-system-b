@@ -13,27 +13,30 @@ class EventController extends Controller
      * Display a listing of the resource.
      */
     // ✅ List all events (GET /event)
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $events = Event::with('organizer')->get();
+            $page = $request->query('page', 1);
+            $perPage = $request->query('count', 10);
+
+            $events = Event::with('organizer')->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
-                'events' => $events
-            ], 200);
-        } catch (\Exception $e) {
-            // Optional: Log the error for debugging purposes
-            // \Log::error('Error retrieving events: ' . $e->getMessage());
-
+                'data' => $events->items(),
+                'total_event' => $events->total()
+                
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve events. An unexpected error occurred.',
+                'message' => 'Something went wrong!',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -87,7 +90,7 @@ class EventController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Event created successfully!',
-                'event' => $event
+                'data' => $event
             ], 201);
         } catch (\Exception $e) {
             // Optional: Log the error for debugging
@@ -121,7 +124,7 @@ class EventController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Event details retrieved successfully',
-                'event' => $event
+                'data' => $event
             ], 200);
         } catch (\Exception $e) {
             // Optional: Log the error for debugging purposes
@@ -196,7 +199,7 @@ class EventController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Event updated successfully',
-                'event' => $event
+                'data' => $event
             ], 200);
         } catch (\Exception $e) {
             // Optional: Log the error for debugging
@@ -267,7 +270,7 @@ class EventController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Your events retrieved successfully',
-                'events' => $events
+                'data' => $events
             ], 200);
         } catch (\Exception $e) {
             // Optional: Log the error for debugging purposes
