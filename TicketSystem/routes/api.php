@@ -51,10 +51,11 @@ Route::middleware(['auth:api'])->group(function () {
         });
         //Event Management CRUD
         Route::post('/event', [EventController::class, 'store']);
+        Route::get('/events', [EventController::class, 'myEvent']);
         Route::patch('/event/{id}', [EventController::class, 'update']);
         Route::delete('/event/{id}', [EventController::class, 'destroy']);
     });
-    
+
     //User Only
     Route::prefix('user')->middleware(['role:user'])->group(function () {
         //user Dashboard

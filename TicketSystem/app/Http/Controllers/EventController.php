@@ -246,4 +246,38 @@ class EventController extends Controller
             ], 500);
         }
     }
+
+    public function myEvent()
+    {
+        try {
+            $userId = Auth::id();
+            // dd($userId);
+
+            if (!$userId) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Authentication required to view your events.'
+                ], 401);
+            }
+
+            $events = Event::where('created_by', $userId)
+                ->with('organizer')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Your events retrieved successfully',
+                'events' => $events
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging purposes
+            // \Log::error('Error retrieving events for user ' . Auth::id() . ': ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve your events. An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
