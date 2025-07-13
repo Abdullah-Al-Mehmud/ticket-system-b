@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EventController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,11 @@ Route::prefix('organizer')->middleware(['auth:api', 'role:organizer'])->group(fu
             "message" => "organizer API Successfully Work"
         ]);
     });
+    //Event Management CRUD
+    Route::post('/event', [EventController::class, 'store']);
+    Route::put('/event/{id}', [EventController::class, 'update']);
+    Route::patch('/event/{id}', [EventController::class, 'patch']);
+    Route::delete('/event/{id}', [EventController::class, 'destroy']);
 });
 
 Route::prefix('user')->middleware(['auth:api', 'role:user'])->group(function () {
