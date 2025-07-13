@@ -12,9 +12,27 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // ✅ List all events (GET /event)
     public function index()
     {
-        //
+        try {
+            $events = Event::with('organizer')->get();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Events retrieved successfully',
+                'events' => $events
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging purposes
+            // \Log::error('Error retrieving events: ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve events. An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -87,11 +105,35 @@ class EventController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Event $event)
+    // ✅ Show single event by ID (GET /event/{id})
+    public function show($id)
     {
-        //
-    }
+        try {
+            $event = Event::with('organizer')->find($id);
 
+            if (!$event) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Event not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Event details retrieved successfully',
+                'event' => $event
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging purposes
+            // \Log::error('Error retrieving event (ID: ' . $id . '): ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve event. An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Show the form for editing the specified resource.
      */
