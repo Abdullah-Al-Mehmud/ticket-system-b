@@ -19,37 +19,59 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
+Route::middleware(['auth:api'])->group(function () {
+    // Public for all authenticated users
+    Route::get('/event', [EventController::class, 'index']);
+    Route::get('/event/{id}', [EventController::class, 'show']);
+
+    //Admin Only
+    Route::prefix('admin')->middleware(['role:admin'])->group(function () {
+        //Admin Dashboard
+        Route::get('/test', function () {
+            try {
+                return response()->json([
+                    "status" => true,
+                    "message" => "admin API Successfully Work"
+                ]);
+            } catch (Exception $e) {
+                return response()->json(['error' => $e->getMessage()]);
+            }
+        });
+    });
 
 
-
-
-Route::prefix('admin')->middleware(['auth:api', 'role:admin'])->group(function () {
-    //Admin Dashboard
-    Route::get('/test', function () {
-        try {
+    // Organizer only
+    Route::prefix('organizer')->middleware(['role:organizer'])->group(function () {
+        //organizer Dashboard
+        Route::get('/test', function () {
             return response()->json([
                 "status" => true,
-                "message" => "admin API Successfully Work"
+                "message" => "organizer API Successfully Work"
             ]);
-        } catch (Exception $e) {
-            return response()->json(['error' => $e->getMessage()]);
-        }
+        });
+        //Event Management CRUD
+        Route::post('/event', [EventController::class, 'store']);
+        Route::patch('/event/{id}', [EventController::class, 'update']);
+        Route::delete('/event/{id}', [EventController::class, 'destroy']);
+    });
+    
+    //User Only
+    Route::prefix('user')->middleware(['role:user'])->group(function () {
+        //user Dashboard
+        Route::get('/test', function () {
+            return response()->json([
+                "status" => true,
+                "message" => "User API Successfully Work"
+            ]);
+        });
     });
 });
 
-Route::prefix('organizer')->middleware(['auth:api', 'role:organizer'])->group(function () {
-    //organizer Dashboard
-    Route::get('/test', function () {
-        return response()->json([
-            "status" => true,
-            "message" => "organizer API Successfully Work"
-        ]);
-    });
-    //Event Management CRUD
-    Route::post('/event', [EventController::class, 'store']);
-    Route::patch('/event/{id}', [EventController::class, 'update']);
-    Route::delete('/event/{id}', [EventController::class, 'destroy']);
-});
+
+
+
+
+
 
 Route::prefix('user')->middleware(['auth:api', 'role:user'])->group(function () {
     //user Dashboard
