@@ -102,9 +102,69 @@ class EventController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Event $event)
+    // ✅ Update (PATCH /event/{id})
+    public function update(Request $request, $id)
     {
-        //
+        // 1. Find the event
+        $event = Event::find($id);
+
+        if (!$event) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Event not found'
+            ], 404); // 404 Not Found status
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'category' => 'required|string',
+            'event_description' => 'required|string',
+            'location' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'ticket_price' => 'required|numeric|min:0',
+            'status' => 'required',
+            'privacy_policy' => 'required|string',
+            'image_url' => 'required|url',
+        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation errors',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $event->update([
+                'title' => $request->title,
+                'category' => $request->category,
+                'event_description' => $request->event_description,
+                'location' => $request->location,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'ticket_price' => $request->ticket_price,
+                'status' => $request->status,
+                'privacy_policy' => $request->privacy_policy,
+                'image_url' => $request->image_url,
+            ]);
+
+            // 5. Return success response
+            return response()->json([
+                'status' => true,
+                'message' => 'Event updated successfully',
+                'event' => $event
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging
+            // \Log::error('Error updating event (ID: ' . $id . '): ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update event. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
