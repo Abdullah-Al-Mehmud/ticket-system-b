@@ -28,6 +28,7 @@ class EventController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    // ✅ Create event (POST /event)
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -170,8 +171,37 @@ class EventController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Event $event)
+    // ✅ Delete event (DELETE /event/{id})
+    public function destroy($id)
     {
-        //
+        $event = Event::find($id);
+
+
+        if (!$event) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Event not found'
+            ], 404);
+        }
+
+
+        try {
+            $event->delete();
+
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Event deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging purposes
+            // \Log::error('Error deleting event (ID: ' . $id . '): ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete event. An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
