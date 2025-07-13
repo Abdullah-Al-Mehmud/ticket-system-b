@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
             $table->integer('ticket_quantity');
             $table->decimal('price_per_ticket', 10, 2);
-            $table->string('status', );
+            $table->enum('status', ["booked", "canceled", "refunded"])->default('booked');
             $table->timestamp('purchased_at')->nullable();
             $table->timestamps();
         });

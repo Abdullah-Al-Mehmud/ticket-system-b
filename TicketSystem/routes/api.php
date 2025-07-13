@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -82,4 +83,6 @@ Route::prefix('user')->middleware(['auth:api', 'role:user'])->group(function () 
             "message" => "User API Successfully Work"
         ]);
     });
+
+    Route::post('/ticket', [TicketController::class, 'store']);
 });
