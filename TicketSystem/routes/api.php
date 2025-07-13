@@ -18,11 +18,11 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 //Logout System
 Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+Route::get('/event', [EventController::class, 'index']);
+Route::get('/event/{id}', [EventController::class, 'show']);
 
 Route::middleware(['auth:api'])->group(function () {
     // Public for all authenticated users
-    Route::get('/event', [EventController::class, 'index']);
-    Route::get('/event/{id}', [EventController::class, 'show']);
 
     //Admin Only
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
