@@ -15,9 +15,28 @@ class TicketController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        try {
+            $page = $request->query('page', 1);
+            $perPage = $request->query('count', 10);
+
+            $ticket = ticket::with('user', 'event')->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'ticket retrieved successfully',
+                'data' => $ticket->items(),
+                'total_event' => $ticket->total()
+
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
