@@ -38,6 +38,11 @@ Route::middleware(['auth:api'])->group(function () {
                 return response()->json(['error' => $e->getMessage()]);
             }
         });
+
+        //Ticket Update Mange Admin 
+        Route::patch('/ticket/{id}', [TicketController::class, 'update']);
+        Route::get('/ticket', [TicketController::class, 'index']);
+        Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
     });
 
 
@@ -83,6 +88,7 @@ Route::prefix('user')->middleware(['auth:api', 'role:user'])->group(function () 
             "message" => "User API Successfully Work"
         ]);
     });
-
+    //Tickets Management CRUD
     Route::post('/ticket', [TicketController::class, 'store']);
+    Route::get('/tickets', [TicketController::class, 'myTickets']);
 });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -55,23 +56,33 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user = User::where('email', $request->email)->first();
+
+        $cookie = Cookie::make('token', $token, 60 * 24 * 30)
+            ->withPath('/')
+            ->withHttpOnly()
+            ->withSameSite('None')
+            ->withSecure();
+
         return response()->json([
             'status' => true,
             'message' => 'Login successful',
             'token' => $token,
             'token_type' => 'bearer',
-        ], 200);
+            'data'=>$user
+        ], 200)->withCookie($cookie);
     }
 
     //LogOut User
     public function logout()
     {
+        $cookie = Cookie::forget('token');
         Auth::guard('api')->logout();
 
 
         return response()->json([
             'status' => true,
             'message' => 'Logged out successfully',
-        ]);
+        ])->withCookie($cookie);
     }
 }
