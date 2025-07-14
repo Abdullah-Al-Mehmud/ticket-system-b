@@ -21,7 +21,7 @@ class TicketController extends Controller
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
 
-            $ticket = ticket::with('user', 'event')->paginate($perPage, ['*'], 'page', $page);
+            $ticket = Ticket::with('user', 'event')->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
@@ -180,9 +180,37 @@ class TicketController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Ticket $ticket)
+    public function destroy($id)
     {
-        //
+        $ticket = Ticket::find($id);
+
+
+        if (!$ticket) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ticket not found'
+            ], 404);
+        }
+
+
+        try {
+            $ticket->delete();
+
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            // Optional: Log the error for debugging purposes
+            // \Log::error('Error deleting event (ID: ' . $id . '): ' . $e->getMessage());
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete ticket. An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function myTickets(Request $request)

@@ -42,6 +42,7 @@ Route::middleware(['auth:api'])->group(function () {
         //Ticket Update Mange Admin 
         Route::patch('/ticket/{id}', [TicketController::class, 'update']);
         Route::get('/ticket', [TicketController::class, 'index']);
+        Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
     });
 
 
