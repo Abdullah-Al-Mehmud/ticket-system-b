@@ -56,6 +56,8 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user = User::where('email', $request->email)->first();
+
         $cookie = Cookie::make('token', $token, 60 * 24 * 30)
             ->withPath('/')
             ->withHttpOnly()
@@ -67,6 +69,7 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'token' => $token,
             'token_type' => 'bearer',
+            'data'=>$user
         ], 200)->withCookie($cookie);
     }
 
