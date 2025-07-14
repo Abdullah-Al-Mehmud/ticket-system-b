@@ -60,7 +60,7 @@ class AuthController extends Controller
 
         $cookie = Cookie::make('token', $token, 60 * 24 * 30)
             ->withPath('/')
-            ->withHttpOnly()
+            ->withHttpOnly(true)
             ->withSameSite('None')
             ->withSecure();
 

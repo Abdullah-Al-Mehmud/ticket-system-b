@@ -24,12 +24,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // Corrected argument order: $e (Exception) first, $request (Request) second
         $exceptions->render(function (AuthenticationException $e, Request $request) {
-          
-            if($e->getMessage() === 'Unauthenticated.' ){
-                return response()->json(['message'=> 'You are not Authorize'],404);
+
+            if ($e->getMessage() === 'Unauthenticated.') {
+                return response()->json([
+                    'status' => 'false',
+                    'message' => 'You are not Authorize'
+                ], 404);
             }
 
             // For web requests, still redirect to login
-            return response()->json(['message'=> $e->getMessage()],500);
+            return response()->json(['message' => $e->getMessage()], 500);
         });
     })->create();
