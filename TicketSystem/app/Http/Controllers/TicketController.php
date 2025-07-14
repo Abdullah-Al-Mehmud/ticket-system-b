@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Ticket;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -115,9 +116,46 @@ class TicketController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ticket $ticket)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $ticket = Ticket::findOrFail($id);
+            $validatedData = $request->validate([
+                'event_id' => 'sometimes|exists:events,id',
+                'ticket_quantity' => 'sometimes|integer|min:1',
+                'status' => 'sometimes|string|in:booked,refunded,canceled',
+            ], [
+                'event_id.exists' => 'The selected event does not exist.',
+                'ticket_quantity.integer' => 'The ticket quantity must be a whole number.',
+                'ticket_quantity.min' => 'The ticket quantity must be at least 1.',
+                'status.in' => 'The status must be one of the allowed values (e.g., booked, refunded, canceled).',
+            ]);
+
+            $ticket->update($validatedData);
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket booking updated successfully.',
+                'data' => $ticket
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ticket booking not found.',
+            ], 404);
+        } catch (ValidationException $e) {
+            // Catches validation errors from $request->validate()
+            // Returns all validation errors, which is standard for APIs
+            return response()->json([
+                'status' => false,
+                'message' => $e->validator->errors()->first(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update ticket booking due to an unexpected server error. Please try again later.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

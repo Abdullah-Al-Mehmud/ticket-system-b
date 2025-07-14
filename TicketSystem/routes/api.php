@@ -38,6 +38,9 @@ Route::middleware(['auth:api'])->group(function () {
                 return response()->json(['error' => $e->getMessage()]);
             }
         });
+
+        //Ticket Update Mange Admin 
+        Route::patch('/ticket/{id}', [TicketController::class, 'update']);
     });
 
 
