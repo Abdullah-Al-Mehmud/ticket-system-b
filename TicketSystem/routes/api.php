@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -50,12 +51,8 @@ Route::middleware(['auth:api'])->group(function () {
     // Organizer only
     Route::prefix('organizer')->middleware(['role:organizer'])->group(function () {
         //organizer Dashboard
-        Route::get('/test', function () {
-            return response()->json([
-                "status" => true,
-                "message" => "organizer API Successfully Work"
-            ]);
-        });
+        Route::get('/dashboard', [OrganizerController::class, 'dashboard']);
+
         //Event Management CRUD
         Route::post('/event', [EventController::class, 'store']);
         Route::get('/events', [EventController::class, 'myEvent']);
