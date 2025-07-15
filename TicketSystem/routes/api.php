@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Http\Request;
@@ -28,21 +29,14 @@ Route::middleware(['auth:api'])->group(function () {
     //Admin Only
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
         //Admin Dashboard
-        Route::get('/test', function () {
-            try {
-                return response()->json([
-                    "status" => true,
-                    "message" => "admin API Successfully Work"
-                ]);
-            } catch (Exception $e) {
-                return response()->json(['error' => $e->getMessage()]);
-            }
-        });
-
+        
         //Ticket Update Mange Admin 
         Route::patch('/ticket/{id}', [TicketController::class, 'update']);
         Route::get('/ticket', [TicketController::class, 'index']);
         Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
+
+        //Categories CRUD Operation Manage
+        Route::post('/categories', [CategoryController::class, 'store']);
     });
 
 
