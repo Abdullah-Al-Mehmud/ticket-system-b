@@ -25,7 +25,6 @@ Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
 
 Route::middleware(['auth:api'])->group(function () {
-    // Public for all authenticated users
 
     //Admin Only
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
