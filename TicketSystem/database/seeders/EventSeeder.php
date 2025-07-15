@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -22,12 +23,16 @@ class EventSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'organizer'
         ]);
+        $category = Category::create([
+            'name' => fake()->randomElement(['Music', 'Sports', 'Tech', 'Business']),
+            'status' => fake()->randomElement(['active', 'inactive'])
+        ]);
 
         for ($i = 1; $i <= 15; $i++) {
             Event::create([
                 'created_by' => $organizer->id,
+                'category_id' => $category->id,
                 'title' => 'Event ' . $i,
-                'category' => fake()->randomElement(['Music', 'Sports', 'Tech', 'Business']),
                 'event_description' => fake()->paragraph(3),
                 'location' => fake()->city(),
                 'start_date' => Carbon::now()->addDays($i),
