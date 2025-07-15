@@ -19,7 +19,7 @@ class EventController extends Controller
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
 
-            $events = Event::with('organizer')->paginate($perPage, ['*'], 'page', $page);
+            $events = Event::with('organizer', 'category')->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
@@ -53,8 +53,8 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'category_id' => 'required|exists:categories,id', // ✅ Updated
             'title' => 'required|string|max:255',
-            'category' => 'required|string',
             'event_description' => 'required|string',
             'location' => 'required|string',
             'start_date' => 'required|date',
@@ -64,19 +64,20 @@ class EventController extends Controller
             'privacy_policy' => 'required|string',
             'image_url' => 'required|url',
         ]);
+
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors()->first()
             ], 422);
         }
 
         try {
             $event = Event::create([
                 'created_by' => Auth::guard('api')->id(),
+                'category_id' => $request->category_id,
                 'title' => $request->title,
-                'category' => $request->category,
                 'event_description' => $request->event_description,
                 'location' => $request->location,
                 'start_date' => $request->start_date,
@@ -93,10 +94,6 @@ class EventController extends Controller
                 'data' => $event
             ], 201);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging
-            // \Log::error('Error creating event: ' . $e->getMessage());
-
-            // Return a more generic error message to the client
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create event. Please try again.',
@@ -112,7 +109,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = Event::with('organizer')->find($id);
+            $event = Event::with('organizer', 'category')->find($id);
 
             if (!$event) {
                 return response()->json([
@@ -264,7 +261,7 @@ class EventController extends Controller
             }
 
             $events = Event::where('created_by', $userId)
-                ->with('organizer')
+                ->with('organizer', 'category')
                 ->get();
 
             return response()->json([
