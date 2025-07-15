@@ -73,24 +73,8 @@ Route::middleware(['auth:api'])->group(function () {
                 "message" => "User API Successfully Work"
             ]);
         });
+        //Tickets Management CRUD
+        Route::post('/ticket', [TicketController::class, 'store']);
+        Route::get('/tickets', [TicketController::class, 'myTickets']);
     });
-});
-
-
-
-
-
-
-
-Route::prefix('user')->middleware(['auth:api', 'role:user'])->group(function () {
-    //user Dashboard
-    Route::get('/test', function () {
-        return response()->json([
-            "status" => true,
-            "message" => "User API Successfully Work"
-        ]);
-    });
-    //Tickets Management CRUD
-    Route::post('/ticket', [TicketController::class, 'store']);
-    Route::get('/tickets', [TicketController::class, 'myTickets']);
 });
