@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -63,12 +64,8 @@ Route::middleware(['auth:api'])->group(function () {
     //User Only
     Route::prefix('user')->middleware(['role:user'])->group(function () {
         //user Dashboard
-        Route::get('/test', function () {
-            return response()->json([
-                "status" => true,
-                "message" => "User API Successfully Work"
-            ]);
-        });
+        Route::get('/dashboard', [UserController::class, 'dashboard']);
+
         //Tickets Management CRUD
         Route::post('/ticket', [TicketController::class, 'store']);
         Route::get('/tickets', [TicketController::class, 'myTickets']);
