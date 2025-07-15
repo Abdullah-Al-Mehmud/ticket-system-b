@@ -155,33 +155,34 @@ class EventController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Event not found'
-            ], 404); // 404 Not Found status
+            ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
-            'category' => 'required|string',
+            'category_id' => 'required|exists:categories,id', // ✅ Updated
             'event_description' => 'required|string',
             'location' => 'required|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'ticket_price' => 'required|numeric|min:0',
-            'status' => 'required',
+            'status' => 'required|string',
             'privacy_policy' => 'required|string',
             'image_url' => 'required|url',
         ]);
+
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors()->first()
             ], 422);
         }
 
         try {
             $event->update([
                 'title' => $request->title,
-                'category' => $request->category,
+                'category_id' => $request->category_id, // ✅ Updated
                 'event_description' => $request->event_description,
                 'location' => $request->location,
                 'start_date' => $request->start_date,
@@ -192,16 +193,12 @@ class EventController extends Controller
                 'image_url' => $request->image_url,
             ]);
 
-            // 5. Return success response
             return response()->json([
                 'status' => true,
                 'message' => 'Event updated successfully',
                 'data' => $event
             ], 200);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging
-            // \Log::error('Error updating event (ID: ' . $id . '): ' . $e->getMessage());
-
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to update event. Please try again.',
@@ -209,6 +206,7 @@ class EventController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
