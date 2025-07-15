@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -69,9 +70,43 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $category = Category::findOrFail($id);
+
+            $validated = $request->validate([
+                'name' => 'sometimes|string|unique:categories,name,' . $category->id,
+                'status' => 'sometimes|string|in:active,inactive',
+            ], [
+                'name.unique' => 'A category with this name already exists.',
+                'status.in' => 'The status must be either active or inactive.',
+            ]);
+            $category->update($validated);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Category updated successfully.',
+                'data' => $category
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Category not found.',
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->validator->errors()->first(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to update category due to an unexpected server error. Please try again.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

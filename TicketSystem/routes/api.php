@@ -37,6 +37,8 @@ Route::middleware(['auth:api'])->group(function () {
 
         //Categories CRUD Operation Manage
         Route::post('/categories', [CategoryController::class, 'store']);
+        Route::patch('/categories/{id}', [CategoryController::class, 'update']);
+
     });
 
 
