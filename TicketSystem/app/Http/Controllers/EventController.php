@@ -16,17 +16,34 @@ class EventController extends Controller
     public function index(Request $request)
     {
         try {
+            $query = Event::with('organizer', 'category');
+
+            if ($request->has('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+
+            if ($request->has('search')) {
+                $search = strtolower($request->query('search'));
+                $query->whereRaw('LOWER(title) LIKE ?', ["%$search%"]);
+            }
+
+
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
+            $countEvent = $query->count();
 
-            $events = Event::with('organizer', 'category')->paginate($perPage, ['*'], 'page', $page);
+            $events = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
                 'data' => $events->items(),
-                'total_event' => $events->total()
-
+                'total_event' => $countEvent
             ]);
         } catch (\Throwable $e) {
             return response()->json([
