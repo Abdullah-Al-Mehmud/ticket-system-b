@@ -26,7 +26,7 @@ class EventController extends Controller
                 'message' => 'Events retrieved successfully',
                 'data' => $events->items(),
                 'total_event' => $events->total()
-                
+
             ]);
         } catch (\Throwable $e) {
             return response()->json([
