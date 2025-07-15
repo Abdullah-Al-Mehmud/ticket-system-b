@@ -12,9 +12,28 @@ class CategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        try {
+            $page = $request->query('page', 1);
+            $perPage = $request->query('count', 10);
+
+            $events = Category::paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Categories retrieved successfully',
+                'data' => $events->items(),
+                'total_event' => $events->total()
+
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -112,8 +131,19 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category)
+    public function destroy($id)
     {
-        //
+        $category = Category::find($id);
+
+        if (!$category) {
+            return response()->json(['status' => false, 'message' => 'Category not found'], 404);
+        }
+
+        $category->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Category deleted successfully'
+        ]);
     }
 }

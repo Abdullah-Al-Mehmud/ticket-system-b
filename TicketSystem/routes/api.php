@@ -29,7 +29,7 @@ Route::middleware(['auth:api'])->group(function () {
     //Admin Only
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
         //Admin Dashboard
-        
+
         //Ticket Update Mange Admin 
         Route::patch('/ticket/{id}', [TicketController::class, 'update']);
         Route::get('/ticket', [TicketController::class, 'index']);
@@ -38,7 +38,9 @@ Route::middleware(['auth:api'])->group(function () {
         //Categories CRUD Operation Manage
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::patch('/categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
+        Route::get('/categories', [CategoryController::class, 'index']);
     });
 
 
