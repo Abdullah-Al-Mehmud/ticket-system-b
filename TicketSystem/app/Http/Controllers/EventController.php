@@ -32,6 +32,7 @@ class EventController extends Controller
                 $query->whereRaw('LOWER(title) LIKE ?', ["%$search%"]);
             }
 
+            $query->orderBy('created_at', 'desc');
 
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
