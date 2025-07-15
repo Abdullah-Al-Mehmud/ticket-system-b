@@ -69,7 +69,7 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'token' => $token,
             'token_type' => 'bearer',
-            'data'=>$user
+            'data' => $user
         ], 200)->withCookie($cookie);
     }
 
