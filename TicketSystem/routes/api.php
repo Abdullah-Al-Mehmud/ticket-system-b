@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
@@ -29,6 +30,8 @@ Route::middleware(['auth:api'])->group(function () {
     //Admin Only
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
         //Admin Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+
 
         //Ticket Update Mange Admin 
         Route::patch('/ticket/{id}', [TicketController::class, 'update']);
