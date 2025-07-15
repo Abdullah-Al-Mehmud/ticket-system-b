@@ -35,7 +35,7 @@ class EventSeeder extends Seeder
                 'ticket_price' => fake()->randomFloat(2, 100, 1000),
                 'status' => fake()->randomElement(['upcoming', 'completed', 'cancelled']),
                 'privacy_policy' => 'All tickets are non-refundable unless the event is cancelled.',
-                'image_url' => 'https://source.unsplash.com/600x400/?event,' . $i,
+                'image_url' => 'https://floral-mountain-2867.fly.storage.tigris.dev/media/events/banner/ONI_HASAN_KV_1200x630.png',
             ]);
         }
     }

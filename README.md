@@ -49,7 +49,9 @@ php artisan key:generate
 php artisan migrate
 php artisan db:seed # যদি ডামি ডেটা সীড করতে চান
 ```
-
+```bash
+php artisan migrate:fresh --seed
+```
 **গুরুত্বপূর্ণ:** যদি আপনি ডাটাবেজ পরিষ্কার করে নতুনভাবে শুরু করতে চান, তাহলে `php artisan migrate:fresh --seed` ব্যবহার করতে পারেন। এটি সব টেবিল ড্রপ করে নতুন করে মাইগ্রেট করবে এবং সীড করবে।
 
 \<hr/\>
