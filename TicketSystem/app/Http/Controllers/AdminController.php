@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 class AdminController extends Controller
 {
@@ -85,28 +86,23 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         try {
-            // Pagination parameters
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
 
-            // Base query
-            $query = User::query();
+            $query = User::with('roles');
 
-            // Role filtering
             if ($request->has('role')) {
                 $role = $request->input('role');
-                $query->where('role', $role);
+                $query->role($role);
             }
 
-            // Search by name
             if ($request->has('search')) {
                 $searchTerm = $request->input('search');
                 $query->where('name', 'like', '%' . $searchTerm . '%');
             }
 
-            // Execute pagination
-            $users = $query->paginate($perPage, ['*'], 'page', $page);
             $count = $query->count();
+            $users = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
@@ -123,6 +119,8 @@ class AdminController extends Controller
         }
     }
 
+
+
     public function show($id)
     {
         $user = User::find($id);
@@ -135,47 +133,72 @@ class AdminController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Single user Data fetched Successfully',
-            'data' => $user
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+            ]
         ]);
     }
     public function store(Request $request)
     {
         try {
-            // Validate the request
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|string|email|unique:users',
+                'name'     => 'required|string|max:255',
+                'email'    => 'required|string|email|unique:users',
                 'password' => 'required|string|min:6|confirmed',
-                'role' => 'required|in:user,organizer,admin',
+                'role'     => 'required|string|in:user,organizer,admin',
             ]);
 
-            // Create the user
+
             $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
+                'name'     => $validated['name'],
+                'email'    => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role' => $validated['role'],
             ]);
+
+            $role = Role::where([
+                ['name', $validated['role']],
+                ['guard_name', 'api']
+            ])->first();
+
+            if (!$role) {
+                $role = Role::create([
+                    'name'       => $validated['role'],
+                    'guard_name' => 'api',
+                ]);
+            }
+
+
+            $user->assignRole($role);
 
             return response()->json([
-                'status' => true,
-                'message' => 'User created successfully',
-                'user' => $user
+                'status'  => true,
+                'message' => 'User created and role assigned successfully',
+                'data'    => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'created_at' => $user->created_at,
+                    'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+                ]
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Validation failed',
-                'errors' => $e->validator->errors()->first()
+                'errors'  => $e->validator->errors()->first()
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'User creation failed',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
+
 
     public function update(Request $request, $id)
     {
@@ -191,40 +214,52 @@ class AdminController extends Controller
 
             // Validate incoming data
             $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|string|email|unique:users,email,' . $user->id,
-                'role' => 'required|in:user,organizer,admin',
+                'name'     => 'required|string|max:255',
+                'email'    => 'required|string|email|unique:users,email,' . $user->id,
+                'role'     => 'required|in:user,organizer,admin',
                 'password' => 'nullable|string|min:6|confirmed',
             ]);
 
-            // Update fields
+            // Update user fields
             $user->name = $validated['name'];
             $user->email = $validated['email'];
-            $user->role = $validated['role'];
 
-            // Update password if provided
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
             }
 
             $user->save();
 
+            // Check if the role exists, if not create it
+            $role = Role::firstOrCreate(
+                ['name' => $validated['role'], 'guard_name' => 'api']
+            );
+
+            // Remove old roles and assign new role
+            $user->syncRoles([$role]);
+
             return response()->json([
-                'status' => true,
+                'status'  => true,
                 'message' => 'User updated successfully',
-                'user' => $user
+                'data'    => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'created_at' => $user->created_at,
+                    'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+                ]
             ]);
         } catch (ValidationException $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'Validation failed',
-                'errors' => $e->validator->errors()->first()
+                'errors'  => $e->validator->errors()->first()
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'status' => false,
+                'status'  => false,
                 'message' => 'User update failed',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -241,6 +276,10 @@ class AdminController extends Controller
                 'message' => 'User not found'
             ], 404);
         }
+
+        // Step 1: Remove assigned roles (detach from pivot table)
+        $user->roles()->detach(); // or use $user->syncRoles([])
+
 
         $user->delete();
 
