@@ -33,6 +33,13 @@ Route::middleware(['auth:api'])->group(function () {
         //Admin Dashboard
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
 
+        //USER CRUD Operation Admin Manage..
+        Route::get('/user', [AdminController::class, 'index']);
+        Route::get('/user/{id}', [AdminController::class, 'show']);
+
+        Route::post('/users', [AdminController::class, 'store']);
+        Route::patch('/users/{id}', [AdminController::class, 'update']);
+        Route::delete('/users/{id}', [AdminController::class, 'destroy']);
 
         //Ticket Update Mange Admin 
         Route::patch('/ticket/{id}', [TicketController::class, 'update']);
