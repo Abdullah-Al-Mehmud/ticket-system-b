@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jul 13, 2025 at 11:57 AM
+-- Generation Time: Jul 16, 2025 at 12:07 PM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.16
 
@@ -33,6 +33,13 @@ CREATE TABLE `cache` (
   `expiration` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `cache`
+--
+
+INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
+('laravel-cache-frEeT0DfTZQ6KauR', 'a:1:{s:11:\"valid_until\";i:1752663018;}', 1753872678);
+
 -- --------------------------------------------------------
 
 --
@@ -48,14 +55,39 @@ CREATE TABLE `cache_locks` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `categories`
+--
+
+CREATE TABLE `categories` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('active','inactive') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `categories`
+--
+
+INSERT INTO `categories` (`id`, `name`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Sports', 'inactive', '2025-07-16 03:51:46', '2025-07-16 03:51:46'),
+(2, 'Technology', 'active', '2025-07-16 03:51:46', '2025-07-16 03:51:46'),
+(3, 'Theater', 'inactive', '2025-07-16 03:51:46', '2025-07-16 03:51:46'),
+(4, 'Comedy', 'active', '2025-07-16 03:51:46', '2025-07-16 03:51:46'),
+(5, 'Tech', 'inactive', '2025-07-16 03:51:47', '2025-07-16 03:51:47');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `events`
 --
 
 CREATE TABLE `events` (
   `id` bigint UNSIGNED NOT NULL,
   `created_by` bigint UNSIGNED NOT NULL,
+  `category_id` bigint UNSIGNED NOT NULL,
   `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `category` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `event_description` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `location` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `start_date` datetime NOT NULL,
@@ -67,27 +99,6 @@ CREATE TABLE `events` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `events`
---
-
-INSERT INTO `events` (`id`, `created_by`, `title`, `category`, `event_description`, `location`, `start_date`, `end_date`, `ticket_price`, `status`, `privacy_policy`, `image_url`, `created_at`, `updated_at`) VALUES
-(1, 4, 'Event 1', 'Tech', 'Et ea nobis sequi excepturi. Vel placeat non rerum molestias saepe hic. Pariatur voluptatem qui blanditiis id aut. Quo nihil aut non blanditiis.', 'Stammfort', '2025-07-14 10:52:11', '2025-07-14 13:52:11', 362.51, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,1', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(2, 4, 'Event 2', 'Tech', 'Omnis architecto consequuntur quidem eveniet. Ratione tenetur animi ut occaecati. Et nulla ratione expedita unde voluptate error et.', 'North Miamouth', '2025-07-15 10:52:11', '2025-07-15 13:52:11', 797.21, 'upcoming', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,2', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(3, 4, 'Event 3', 'Tech', 'Repellat omnis quod consequatur inventore animi repudiandae. Iusto quos vel fugiat velit nemo aut. Veritatis facilis beatae eligendi sunt qui facilis. Est quis et laudantium quaerat.', 'Violaview', '2025-07-16 10:52:11', '2025-07-16 13:52:11', 528.63, 'completed', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,3', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(4, 4, 'Event 4', 'Sports', 'Corporis repellat temporibus iusto fugit. Est aut praesentium blanditiis dicta quia est consequuntur. Et quidem omnis aut inventore quia facilis magni explicabo.', 'Sporertown', '2025-07-17 10:52:11', '2025-07-17 13:52:11', 331.35, 'completed', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,4', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(5, 4, 'Event 5', 'Tech', 'Reiciendis dolores similique sapiente est. Aliquam ut est voluptas. Eius ipsa iste aut doloremque alias molestiae. Qui omnis tempore iusto dolorum. Voluptas aperiam aut totam dolores qui enim accusamus.', 'Lake Tommie', '2025-07-18 10:52:11', '2025-07-18 13:52:11', 542.11, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,5', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(6, 4, 'Event 6', 'Sports', 'In voluptate natus ut doloremque quis. Alias et enim est earum veniam dolor facilis occaecati. Minus odio vitae aut sit.', 'Graciehaven', '2025-07-19 10:52:11', '2025-07-19 13:52:11', 141.59, 'upcoming', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,6', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(7, 4, 'Event 7', 'Sports', 'In velit quos qui quia veritatis maiores provident. Dolores consequuntur officia sit vero. Aut ut hic neque ea illo sunt.', 'Gusikowskichester', '2025-07-20 10:52:11', '2025-07-20 13:52:11', 481.35, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,7', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(8, 4, 'Event 8', 'Sports', 'Ut ut sint mollitia deserunt vel nobis. Ducimus porro similique enim voluptas ea. Dolor ipsum consequuntur rerum et alias rerum magni sint. Asperiores non officiis soluta qui dolorem.', 'Riceburgh', '2025-07-21 10:52:11', '2025-07-21 13:52:11', 195.86, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,8', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(9, 4, 'Event 9', 'Business', 'Aut minus et omnis voluptates debitis ea enim. Cupiditate quasi illum numquam magni aut fugiat natus delectus. Occaecati quo commodi dicta dolore.', 'Brayanfort', '2025-07-22 10:52:11', '2025-07-22 13:52:11', 942.45, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,9', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(10, 4, 'Event 10', 'Business', 'Nam officia labore earum ut at. Animi est suscipit id omnis. Voluptas similique blanditiis voluptas aliquid porro corporis blanditiis.', 'Demarcoside', '2025-07-23 10:52:11', '2025-07-23 13:52:11', 188.56, 'completed', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,10', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(11, 4, 'Event 11', 'Sports', 'Quaerat et voluptas asperiores corrupti est quam sunt corrupti. Nobis debitis sit ut voluptatem enim. Est distinctio tempore quas. Fuga numquam eum molestiae maiores in minus ut.', 'Port Maureen', '2025-07-24 10:52:11', '2025-07-24 13:52:11', 185.61, 'upcoming', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,11', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(12, 4, 'Event 12', 'Music', 'Ullam ut dolor architecto aut sequi. Id sed possimus quos repellendus itaque voluptate deserunt. Sit molestiae eos deserunt corrupti fugiat rerum iste dicta.', 'Johnsland', '2025-07-25 10:52:11', '2025-07-25 13:52:11', 163.40, 'cancelled', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,12', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(13, 4, 'Event 13', 'Sports', 'Error in asperiores repellat. Qui facilis quo vero quis. Molestiae omnis molestiae autem.', 'Markville', '2025-07-26 10:52:11', '2025-07-26 13:52:11', 507.88, 'completed', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,13', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(14, 4, 'Event 14', 'Music', 'Exercitationem qui quo qui minus et magnam similique. Explicabo libero nihil est nihil cum. Quisquam praesentium corporis in illum. Numquam sunt placeat sint consequatur ullam.', 'Bryanafort', '2025-07-27 10:52:11', '2025-07-27 13:52:11', 211.84, 'completed', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,14', '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(15, 4, 'Event 15', 'Tech', 'Tenetur sequi asperiores accusamus debitis fugiat. Qui et debitis hic neque praesentium maiores eligendi. Aspernatur atque ducimus ab necessitatibus tenetur quis ut.', 'Rogahnshire', '2025-07-28 10:52:11', '2025-07-28 13:52:11', 548.17, 'upcoming', 'All tickets are non-refundable unless the event is cancelled.', 'https://source.unsplash.com/600x400/?event,15', '2025-07-13 04:52:11', '2025-07-13 04:52:11');
 
 -- --------------------------------------------------------
 
@@ -161,8 +172,45 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (2, '0001_01_01_000001_create_cache_table', 1),
 (3, '0001_01_01_000002_create_jobs_table', 1),
 (4, '2025_07_10_051559_create_personal_access_tokens_table', 1),
-(5, '2025_07_13_050216_create_events_table', 1),
-(6, '2025_07_13_090454_create_tickets_table', 1);
+(5, '2025_07_11_041954_create_categories_table', 1),
+(6, '2025_07_13_050216_create_events_table', 1),
+(7, '2025_07_13_090454_create_tickets_table', 1),
+(8, '2025_07_16_073655_create_permission_tables', 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `model_has_permissions`
+--
+
+CREATE TABLE `model_has_permissions` (
+  `permission_id` bigint UNSIGNED NOT NULL,
+  `model_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `model_id` bigint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `model_has_roles`
+--
+
+CREATE TABLE `model_has_roles` (
+  `role_id` bigint UNSIGNED NOT NULL,
+  `model_type` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `model_id` bigint UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `model_has_roles`
+--
+
+INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
+(5, 'App\\Models\\User', 12),
+(6, 'App\\Models\\User', 13),
+(7, 'App\\Models\\User', 14),
+(5, 'App\\Models\\User', 16),
+(5, 'App\\Models\\User', 17);
 
 -- --------------------------------------------------------
 
@@ -175,6 +223,30 @@ CREATE TABLE `password_reset_tokens` (
   `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `permissions`
+--
+
+CREATE TABLE `permissions` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `guard_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `permissions`
+--
+
+INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
+(1, 'create_events', 'web', '2025-07-16 03:51:47', '2025-07-16 03:51:47'),
+(2, 'edit_events', 'web', '2025-07-16 03:51:47', '2025-07-16 03:51:47'),
+(3, 'delete_events', 'web', '2025-07-16 03:51:47', '2025-07-16 03:51:47'),
+(4, 'view_events', 'web', '2025-07-16 03:51:47', '2025-07-16 03:51:47');
 
 -- --------------------------------------------------------
 
@@ -193,6 +265,40 @@ CREATE TABLE `personal_access_tokens` (
   `expires_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `roles`
+--
+
+CREATE TABLE `roles` (
+  `id` bigint UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `guard_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `roles`
+--
+
+INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
+(5, 'admin', 'api', '2025-07-16 04:27:16', '2025-07-16 04:27:16'),
+(6, 'organizer', 'api', '2025-07-16 04:27:16', '2025-07-16 04:27:16'),
+(7, 'user', 'api', '2025-07-16 04:27:17', '2025-07-16 04:27:17');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `role_has_permissions`
+--
+
+CREATE TABLE `role_has_permissions` (
+  `permission_id` bigint UNSIGNED NOT NULL,
+  `role_id` bigint UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -240,7 +346,6 @@ CREATE TABLE `users` (
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
   `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `role` enum('user','organizer','admin') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
   `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
@@ -250,12 +355,12 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `role`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'Admin User', 'admin@gmail.com', NULL, '$2y$12$XkwAw.aok346rLus7OMEuu/sIOGverfe8boPTxylh3A6obcr8ABqe', 'admin', NULL, '2025-07-13 04:52:09', '2025-07-13 04:52:09'),
-(2, 'Normal User', 'user@gmail.com', NULL, '$2y$12$q2M4FV82/IrAxZXvacO2Ku84bL91ynI3ry7Aus5UwKJuXx1ku.fq.', 'user', NULL, '2025-07-13 04:52:09', '2025-07-13 04:52:09'),
-(3, 'Organizer User', 'organizer@gmail.com', NULL, '$2y$12$OU3GNwTHq8UKC0ro.kua3.G7Cce7QJGNOROl5763OwEyHYdUctHym', 'organizer', NULL, '2025-07-13 04:52:10', '2025-07-13 04:52:10'),
-(4, 'Organizer', 'organizer@example.com', NULL, '$2y$12$ZCSJIqD3hw6HZEaK839Ms.IjPjQgiFowm2..MI5f1QNDtYvZEejzq', 'organizer', NULL, '2025-07-13 04:52:11', '2025-07-13 04:52:11'),
-(5, 'Mark Mckee', 'byva@mailinator.com', NULL, '$2y$12$WwFto0JefUC1occxoAMA/uGWMvk5RBndyCS4.r4.lpYXeXnHcRP72', 'user', NULL, '2025-07-13 05:52:49', '2025-07-13 05:52:49');
+INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
+(12, 'Admin User', 'admin@gmail.com', NULL, '$2y$12$p2DlWFpaNPw0sWe.PlEPAuqZRQHxz1VLBmSiDSpGD8MVvNGDjysOW', NULL, '2025-07-16 04:31:50', '2025-07-16 04:31:50'),
+(13, 'Organizer User', 'organizer@gmail.com', NULL, '$2y$12$VoPiPGYyiayd/nyIGM.AnOzFsqRNV/UXxBC3rt47wOfDRkajOM8li', NULL, '2025-07-16 04:31:51', '2025-07-16 04:31:51'),
+(14, 'Regular User', 'user@gmail.com', NULL, '$2y$12$PavQL12L2KRFx7PSF6pTUunbn747F60ZhfrKk9CxrTI/WWT2s10ti', NULL, '2025-07-16 04:31:51', '2025-07-16 04:31:51'),
+(16, 'Admin Name', 'admin1@gmail.com', NULL, '$2y$12$SInCw3HPRX/68QaKjeXwFeDUlWoKWHGosleG.Ou1MjIcvIWP2kVCK', NULL, '2025-07-16 05:25:55', '2025-07-16 05:33:17'),
+(17, 'Jane Doe', 'janea@examp23l.com', NULL, '$2y$12$Y03m9yso.DFFfX0ZJfkjeOu.6se6Hg08S7.C/7XJg1NeRA/4UqbGm', NULL, '2025-07-16 05:27:39', '2025-07-16 05:27:39');
 
 --
 -- Indexes for dumped tables
@@ -274,11 +379,19 @@ ALTER TABLE `cache_locks`
   ADD PRIMARY KEY (`key`);
 
 --
+-- Indexes for table `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `categories_name_unique` (`name`);
+
+--
 -- Indexes for table `events`
 --
 ALTER TABLE `events`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `events_created_by_foreign` (`created_by`);
+  ADD KEY `events_created_by_foreign` (`created_by`),
+  ADD KEY `events_category_id_foreign` (`category_id`);
 
 --
 -- Indexes for table `failed_jobs`
@@ -307,10 +420,31 @@ ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `model_has_permissions`
+--
+ALTER TABLE `model_has_permissions`
+  ADD PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
+  ADD KEY `model_has_permissions_model_id_model_type_index` (`model_id`,`model_type`);
+
+--
+-- Indexes for table `model_has_roles`
+--
+ALTER TABLE `model_has_roles`
+  ADD PRIMARY KEY (`role_id`,`model_id`,`model_type`),
+  ADD KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`);
+
+--
 -- Indexes for table `password_reset_tokens`
 --
 ALTER TABLE `password_reset_tokens`
   ADD PRIMARY KEY (`email`);
+
+--
+-- Indexes for table `permissions`
+--
+ALTER TABLE `permissions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`);
 
 --
 -- Indexes for table `personal_access_tokens`
@@ -319,6 +453,20 @@ ALTER TABLE `personal_access_tokens`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   ADD KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`);
+
+--
+-- Indexes for table `roles`
+--
+ALTER TABLE `roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`);
+
+--
+-- Indexes for table `role_has_permissions`
+--
+ALTER TABLE `role_has_permissions`
+  ADD PRIMARY KEY (`permission_id`,`role_id`),
+  ADD KEY `role_has_permissions_role_id_foreign` (`role_id`);
 
 --
 -- Indexes for table `sessions`
@@ -348,6 +496,12 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `events`
 --
 ALTER TABLE `events`
@@ -369,13 +523,25 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT for table `permissions`
+--
+ALTER TABLE `permissions`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `tickets`
@@ -387,7 +553,7 @@ ALTER TABLE `tickets`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- Constraints for dumped tables
@@ -397,7 +563,27 @@ ALTER TABLE `users`
 -- Constraints for table `events`
 --
 ALTER TABLE `events`
+  ADD CONSTRAINT `events_category_id_foreign` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `events_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `model_has_permissions`
+--
+ALTER TABLE `model_has_permissions`
+  ADD CONSTRAINT `model_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `model_has_roles`
+--
+ALTER TABLE `model_has_roles`
+  ADD CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `role_has_permissions`
+--
+ALTER TABLE `role_has_permissions`
+  ADD CONSTRAINT `role_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `role_has_permissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `tickets`
