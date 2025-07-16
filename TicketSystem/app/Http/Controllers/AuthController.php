@@ -58,8 +58,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-
-    //Login User
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
@@ -71,9 +69,10 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = Auth::guard('api')->user();
 
-        $cookie = Cookie::make('token', $token, 60 * 24 * 30)
+
+        $cookie = Cookie::make('token', $token, 60 * 24 * 30) // 30 দিন
             ->withPath('/')
             ->withHttpOnly(true)
             ->withSameSite('None')
@@ -84,9 +83,15 @@ class AuthController extends Controller
             'message' => 'Login successful',
             'token' => $token,
             'token_type' => 'bearer',
-            'data' => $user
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+            ]
         ], 200)->withCookie($cookie);
     }
+
 
     //LogOut User
     public function logout()
