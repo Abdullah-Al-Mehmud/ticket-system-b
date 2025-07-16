@@ -21,7 +21,6 @@ class EventSeeder extends Seeder
             'name' => 'Organizer',
             'email' => 'organizer@example.com',
             'password' => Hash::make('password'),
-            'role' => 'organizer'
         ]);
         $category = Category::create([
             'name' => fake()->randomElement(['Music', 'Sports', 'Tech', 'Business']),

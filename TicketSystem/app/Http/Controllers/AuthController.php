@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
@@ -18,14 +19,14 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6|confirmed'
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors()->first(),
             ], 422);
         }
 
@@ -35,7 +36,20 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // $token = JWTAuth::fromUser($user);
+        $role = Role::where([
+            ['name', 'user'],
+            ['guard_name', 'api']
+        ])->first();
+
+        if (!$role) {
+            $role = Role::create([
+                'name' => 'user',
+                'guard_name' => 'api'
+            ]);
+        }
+
+        // 3. Assign the role to user
+        $user->assignRole($role);
 
         return response()->json([
             'status' => true,
@@ -43,6 +57,7 @@ class AuthController extends Controller
             'user' => $user
         ], 201);
     }
+
 
     //Login User
     public function login(Request $request)

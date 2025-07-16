@@ -19,7 +19,6 @@ class UserSeeder extends Seeder
             'name' => 'Admin User',
             'email' => 'admin@gmail.com',
             'password' => Hash::make('password'),
-            'role' => 'admin',
         ]);
 
         // Normal User
@@ -27,7 +26,6 @@ class UserSeeder extends Seeder
             'name' => 'Normal User',
             'email' => 'user@gmail.com',
             'password' => Hash::make('password'),
-            'role' => 'user',
         ]);
 
         // Organizer User
@@ -35,7 +33,6 @@ class UserSeeder extends Seeder
             'name' => 'Organizer User',
             'email' => 'organizer@gmail.com',
             'password' => Hash::make('password'),
-            'role' => 'organizer',
         ]);
     }
 }
