@@ -17,32 +17,25 @@ class AdminController extends Controller
     public function dashboard()
     {
         try {
-            // Total users by role
             $totalUsers = User::count();
-            $totalAdmins = User::where('role', 'admin')->count();
-            $totalOrganizers = User::where('role', 'organizer')->count();
-            $totalCustomers = User::where('role', 'user')->count();
+            $totalAdmins = User::role('admin')->count();
+            $totalOrganizers = User::role('organizer')->count();
+            $totalCustomers = User::role('user')->count();
 
-            // Total events
             $totalEvents = Event::count();
-
-            // Events by status
             $eventStatusCounts = Event::select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
                 ->get();
 
-            // Total tickets & breakdown
             $totalTickets = Ticket::count();
             $ticketStatusCounts = Ticket::select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
                 ->get();
 
-            // Active/Inactive categories
             $categoryStatusCounts = Category::select('status', DB::raw('count(*) as count'))
                 ->groupBy('status')
                 ->get();
 
-            // Top 5 popular events by ticket sales
             $topEvents = Event::select('id', 'title')
                 ->withCount('tickets')
                 ->orderBy('tickets_count', 'desc')
@@ -68,7 +61,7 @@ class AdminController extends Controller
                         'by_status' => $ticketStatusCounts,
                     ],
                     'categories' => [
-                        'by_status' => $categoryStatusCounts
+                        'by_status' => $categoryStatusCounts,
                     ],
                     'top_events' => $topEvents,
                 ]
@@ -81,6 +74,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
 
 
     public function index(Request $request)
