@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -14,25 +15,29 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Admin User
-        User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('password'),
-        ]);
+        $users = [
+            ['name' => 'Admin User', 'email' => 'admin@gmail.com', 'role' => 'admin'],
+            ['name' => 'Organizer User', 'email' => 'organizer@gmail.com', 'role' => 'organizer'],
+            ['name' => 'Regular User', 'email' => 'user@gmail.com', 'role' => 'user'],
+        ];
 
-        // Normal User
-        User::create([
-            'name' => 'Normal User',
-            'email' => 'user@gmail.com',
-            'password' => Hash::make('password'),
-        ]);
+        foreach ($users as $u) {
+            $user = User::where('email', $u['email'])->first();
 
-        // Organizer User
-        User::create([
-            'name' => 'Organizer User',
-            'email' => 'organizer@gmail.com',
-            'password' => Hash::make('password'),
-        ]);
+            if (!$user) {
+                $user = User::create([
+                    'name' => $u['name'],
+                    'email' => $u['email'],
+                    'password' => Hash::make('password'),
+                ]);
+            }
+            $role = Role::firstOrCreate([
+                'name' => $u['role'],
+                'guard_name' => 'api',
+            ]);
+            if (!$user->hasRole($role->name)) {
+                $user->assignRole($role);
+            }
+        }
     }
 }
