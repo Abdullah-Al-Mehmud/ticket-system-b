@@ -8,6 +8,8 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -77,5 +79,174 @@ class AdminController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    public function index(Request $request)
+    {
+        try {
+            // Pagination parameters
+            $page = $request->query('page', 1);
+            $perPage = $request->query('count', 10);
+
+            // Base query
+            $query = User::query();
+
+            // Role filtering
+            if ($request->has('role')) {
+                $role = $request->input('role');
+                $query->where('role', $role);
+            }
+
+            // Search by name
+            if ($request->has('search')) {
+                $searchTerm = $request->input('search');
+                $query->where('name', 'like', '%' . $searchTerm . '%');
+            }
+
+            // Execute pagination
+            $users = $query->paginate($perPage, ['*'], 'page', $page);
+            $count = $query->count();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Users fetched successfully.',
+                'data' => $users->items(),
+                'total_user' => $count
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to fetch users.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Single user Data fetched Successfully',
+            'data' => $user
+        ]);
+    }
+    public function store(Request $request)
+    {
+        try {
+            // Validate the request
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|unique:users',
+                'password' => 'required|string|min:6|confirmed',
+                'role' => 'required|in:user,organizer,admin',
+            ]);
+
+            // Create the user
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User created successfully',
+                'user' => $user
+            ], 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->validator->errors()->first()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User creation failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $user = User::find($id);
+
+            if (!$user) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            // Validate incoming data
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|unique:users,email,' . $user->id,
+                'role' => 'required|in:user,organizer,admin',
+                'password' => 'nullable|string|min:6|confirmed',
+            ]);
+
+            // Update fields
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->role = $validated['role'];
+
+            // Update password if provided
+            if (!empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+
+            $user->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'User updated successfully',
+                'user' => $user
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->validator->errors()->first()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User update failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    // user delete
+    public function destroy($id)
+    {
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'User not found'
+            ], 404);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'User deleted successfully'
+        ]);
     }
 }
