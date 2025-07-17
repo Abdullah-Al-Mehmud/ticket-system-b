@@ -96,12 +96,37 @@ class AdminController extends Controller
             }
 
             $count = $query->count();
-            $users = $query->paginate($perPage, ['*'], 'page', $page);
+
+            if (is_null($page) && is_null($perPage)) {
+                $users = $query->get();
+            } else {
+                $page = $page ?? 1;
+                $perPage = $perPage ?? 10;
+                $users = $query->paginate($perPage, ['*'], 'page', $page);
+                $users = $users->items(); // convert paginator to array
+            }
+            $formattedUsers = collect($users)->map(function ($user) {
+                $user = $user->toArray();
+
+                if (!empty($user['roles'])) {
+                    $user['role'] = [
+                        'id' => $user['roles'][0]['id'] ?? null,
+                        'name' => $user['roles'][0]['name'] ?? null,
+                    ];
+                } else {
+                    $user['role'] = null;
+                }
+
+                unset($user['roles']);
+
+                return $user;
+            });
+
 
             return response()->json([
                 'status' => true,
                 'message' => 'Users fetched successfully.',
-                'data' => $users->items(),
+                'data' => $formattedUsers,
                 'total_user' => $count
             ], 200);
         } catch (\Exception $e) {
