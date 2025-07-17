@@ -14,20 +14,28 @@ class RolePermissionSeeder extends Seeder
      */
     public function run()
     {
+        $permissions = ['create_events', 'edit_events', 'delete_events', 'view_events'];
 
-        Permission::create(['name' => 'create_events']);
-        Permission::create(['name' => 'edit_events']);
-        Permission::create(['name' => 'delete_events']);
-        Permission::create(['name' => 'view_events']);
+        foreach ($permissions as $permissionName) {
+            Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'api',
+            ]);
+        }
 
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
+        $adminRole->syncPermissions(Permission::where('guard_name', 'api')->get());
 
-        $adminRole = Role::create(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        $organizerRole = Role::firstOrCreate(['name' => 'organizer', 'guard_name' => 'api']);
+        $organizerRole->syncPermissions(
+            Permission::whereIn('name', ['create_events', 'edit_events', 'view_events'])
+                ->where('guard_name', 'api')->get()
+        );
 
-        $organizerRole = Role::create(['name' => 'organizer']);
-        $organizerRole->givePermissionTo(['create_events', 'edit_events', 'view_events']);
-
-        $userRole = Role::create(['name' => 'user']);
-        $userRole->givePermissionTo(['view_events']);
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api']);
+        $userRole->syncPermissions(
+            Permission::where('name', 'view_events')
+                ->where('guard_name', 'api')->get()
+        );
     }
 }
