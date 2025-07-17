@@ -14,28 +14,62 @@ class RolePermissionSeeder extends Seeder
      */
     public function run()
     {
-        $permissions = ['create_events', 'edit_events', 'delete_events', 'view_events'];
+        // All Permissions
+        $permissions = [
+            'create events',
+            'edit events',
+            'delete events',
+            'view events',
 
-        foreach ($permissions as $permissionName) {
+            'create categories',
+            'edit categories',
+            'delete categories',
+            'view categories',
+
+            'manage users',
+            'manage tickets',
+
+            'view dashboard',
+        ];
+
+        // Create all permissions
+        foreach ($permissions as $permission) {
             Permission::firstOrCreate([
-                'name' => $permissionName,
+                'name' => $permission,
                 'guard_name' => 'api',
             ]);
         }
 
-        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api']);
-        $adminRole->syncPermissions(Permission::where('guard_name', 'api')->get());
+        // Role-wise permission mapping
+        $rolesPermissions = [
+            'admin' => $permissions, // Admin gets all
 
-        $organizerRole = Role::firstOrCreate(['name' => 'organizer', 'guard_name' => 'api']);
-        $organizerRole->syncPermissions(
-            Permission::whereIn('name', ['create_events', 'edit_events', 'view_events'])
-                ->where('guard_name', 'api')->get()
-        );
+            'organizer' => [
+                'create events',
+                'edit events',
+                'delete events',
+                'view events',
+                'view categories',
+                'view dashboard',
+            ],
 
-        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api']);
-        $userRole->syncPermissions(
-            Permission::where('name', 'view_events')
-                ->where('guard_name', 'api')->get()
-        );
+            'user' => [
+                'view events',
+                'view categories',
+                'view dashboard',
+            ],
+        ];
+
+        // Assign permissions to roles
+        foreach ($rolesPermissions as $roleName => $rolePermissions) {
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'api',
+            ]);
+
+            $role->syncPermissions(
+                Permission::whereIn('name', $rolePermissions)->get()
+            );
+        }
     }
 }
