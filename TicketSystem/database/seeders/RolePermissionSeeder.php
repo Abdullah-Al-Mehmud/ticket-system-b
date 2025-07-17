@@ -16,20 +16,30 @@ class RolePermissionSeeder extends Seeder
     {
         // All Permissions
         $permissions = [
-            'create events',
-            'edit events',
-            'delete events',
-            'view events',
+            'create events admin',
+            'edit events admin',
+            'delete events admin',
+            'view events admin',
 
-            'create categories',
-            'edit categories',
-            'delete categories',
-            'view categories',
+            'create events organizer',
+            'edit events organizer',
+            'delete events organizer',
+            'view events organizer',
 
-            'manage users',
-            'manage tickets',
+            'create categories admin',
+            'edit categories admin',
+            'delete categories admin',
+            'view categories admin',
 
-            'view dashboard',
+            'manage users admin',
+            'manage tickets admin',
+
+            'create ticket user',
+            'View ticket user',
+
+            'view admin dashboard',
+            'view organizer dashboard',
+            'view user dashboard',
         ];
 
         // Create all permissions
@@ -45,19 +55,20 @@ class RolePermissionSeeder extends Seeder
             'admin' => $permissions, // Admin gets all
 
             'organizer' => [
-                'create events',
-                'edit events',
-                'delete events',
-                'view events',
+                'create events organizer',
+                'edit events organizer',
+                'delete events organizer',
+                'view events organizer',
                 'view categories',
-                'view dashboard',
+                'view organizer dashboard',
             ],
 
             'user' => [
                 'view events',
                 'view categories',
-                'view dashboard',
-                'manage tickets'
+                'view user dashboard',
+                'create ticket user',
+                'View ticket user'
             ],
         ];
 

@@ -13,6 +13,7 @@ class EventController extends Controller
      * Display a listing of the resource.
      */
     // ✅ List all events (GET /event)
+    
     public function index(Request $request)
     {
         try {

@@ -29,48 +29,48 @@ Route::middleware(['auth:api'])->group(function () {
     // ✅ Admin Only Permissions
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])
-            ->middleware(['role:admin', 'permission:view dashboard']);
+            ->middleware('permission:view admin dashboard');
 
         // User Manage
-        Route::get('/user', [AdminController::class, 'index'])->middleware('permission:manage users');
-        Route::get('/user/{id}', [AdminController::class, 'show'])->middleware('permission:manage users');
-        Route::post('/users', [AdminController::class, 'store'])->middleware('permission:manage users');
-        Route::patch('/users/{id}', [AdminController::class, 'update'])->middleware('permission:manage users');
-        Route::delete('/users/{id}', [AdminController::class, 'destroy'])->middleware('permission:manage users');
+        Route::get('/user', [AdminController::class, 'index'])->middleware('permission:manage users admin');
+        Route::get('/user/{id}', [AdminController::class, 'show'])->middleware('permission:manage users admin');
+        Route::post('/users', [AdminController::class, 'store'])->middleware('permission:manage users admin');
+        Route::patch('/users/{id}', [AdminController::class, 'update'])->middleware('permission:manage users admin');
+        Route::delete('/users/{id}', [AdminController::class, 'destroy'])->middleware('permission:manage users admin');
 
         // Ticket Manage
-        Route::get('/ticket', [TicketController::class, 'index'])->middleware(['role:admin', 'permission:manage tickets']);
-        Route::patch('/ticket/{id}', [TicketController::class, 'update'])->middleware(['role:admin', 'permission:manage tickets']);
-        Route::delete('/ticket/{id}', [TicketController::class, 'destroy'])->middleware(['role:admin', 'permission:manage tickets']);
+        Route::get('/ticket', [TicketController::class, 'index'])->middleware('permission:manage tickets admin');
+        Route::patch('/ticket/{id}', [TicketController::class, 'update'])->middleware('permission:manage tickets admin');
+        Route::delete('/ticket/{id}', [TicketController::class, 'destroy'])->middleware('permission:manage tickets admin');
 
         // Category Manage
-        Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:create categories');
-        Route::patch('/categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories');
-        Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories');
+        Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:create categories admin');
+        Route::patch('/categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories admin');
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories admin');
 
-        Route::get('/categories', [CategoryController::class, 'index'])->middleware(['role:admin', 'permission:view categories']);
-        Route::get('/categories/{id}', [CategoryController::class, 'show'])->middleware(['role:admin', 'permission:view categories']);
+        Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:view categories Admin');
+        Route::get('/categories/{id}', [CategoryController::class, 'show'])->middleware('permission:delete categories admin');
 
-        Route::get('/event', [EventController::class, 'index'])->middleware(['role:admin', 'permission:view events']);
+        Route::get('/event', [EventController::class, 'index'])->middleware('permission:view events admin');
     });
 
     // ✅ Organizer Permissions
     Route::prefix('organizer')->group(function () {
         Route::get('/dashboard', [OrganizerController::class, 'dashboard'])
-            ->middleware(['role:organizer', 'permission:view dashboard']);
+            ->middleware('permission:view dashboard');
 
-        Route::post('/event', [EventController::class, 'store'])->middleware('permission:create events');
-        Route::get('/events', [EventController::class, 'myEvent'])->middleware(['role:organizer', 'permission:view events']);
-        Route::patch('/event/{id}', [EventController::class, 'update'])->middleware('permission:edit events');
-        Route::delete('/event/{id}', [EventController::class, 'destroy'])->middleware('permission:delete events');
+        Route::post('/event', [EventController::class, 'store'])->middleware('permission:create events organizer');
+        Route::get('/events', [EventController::class, 'myEvent'])->middleware('permission:view events organizer');
+        Route::patch('/event/{id}', [EventController::class, 'update'])->middleware('permission:edit events organizer');
+        Route::delete('/event/{id}', [EventController::class, 'destroy'])->middleware('permission:delete events organizer');
     });
 
     // ✅ User Permissions
     Route::prefix('user')->group(function () {
         Route::get('/dashboard', [UserController::class, 'dashboard'])
-            ->middleware(['role:user', 'permission:view dashboard']);
+            ->middleware('permission:view user dashboard',);
 
-        Route::post('/ticket', [TicketController::class, 'store'])->middleware(['role:user', 'permission:manage tickets']); // Optional check
-        Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware(['role:user', 'permission:manage tickets']);
+        Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');
+        Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:View ticket user');
     });
 });
