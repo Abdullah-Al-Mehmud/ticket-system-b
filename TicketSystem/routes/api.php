@@ -28,7 +28,7 @@ Route::middleware(['auth:api'])->group(function () {
 
     // ✅ Admin Only Permissions
 
-    Route::get('/dashboard', [AdminController::class, 'dashboard'])
+    Route::get('admin/dashboard', [AdminController::class, 'dashboard'])
         ->middleware('permission:view admin dashboard');
 
     // User Manage
@@ -56,8 +56,9 @@ Route::middleware(['auth:api'])->group(function () {
 
     // ✅ Organizer Permissions
 
-    Route::get('/dashboard', [OrganizerController::class, 'dashboard'])
-        ->middleware('permission:view dashboard');
+    Route::get('organizer/dashboard', [OrganizerController::class, 'dashboard'])
+        ->middleware('permission:view organizer dashboard');
+
 
     Route::post('/event', [EventController::class, 'store'])->middleware('permission:create events organizer');
     Route::get('/events', [EventController::class, 'myEvent'])->middleware('permission:view events organizer');
@@ -67,7 +68,7 @@ Route::middleware(['auth:api'])->group(function () {
 
     // ✅ User Permissions
 
-    Route::get('/dashboard', [UserController::class, 'dashboard'])
+    Route::get('user/dashboard', [UserController::class, 'dashboard'])
         ->middleware('permission:view user dashboard',);
 
     Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');

@@ -57,10 +57,10 @@ class RolePermissionSeeder extends Seeder
             'organizer' => [
                 'create events organizer',
                 'edit events organizer',
+                'view organizer dashboard',
                 'delete events organizer',
                 'view events organizer',
                 'view categories',
-                'view organizer dashboard',
             ],
 
             'user' => [
