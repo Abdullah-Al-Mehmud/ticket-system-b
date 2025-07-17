@@ -57,6 +57,7 @@ class RolePermissionSeeder extends Seeder
                 'view events',
                 'view categories',
                 'view dashboard',
+                'manage tickets'
             ],
         ];
 

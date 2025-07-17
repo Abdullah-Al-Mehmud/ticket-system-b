@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request; // Make sure this is imported
+use Spatie\Permission\Exceptions\UnauthorizedException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -34,5 +35,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // For web requests, still redirect to login
             return response()->json(['message' => $e->getMessage()], 500);
+        });
+
+        $exceptions->render(function (UnauthorizedException $e, Request $request) {
+            return response()->json([
+                'status' => false,
+                "message" => "You does not have the right permissions.",
+            ], 403); // 403 for forbidden
         });
     })->create();
