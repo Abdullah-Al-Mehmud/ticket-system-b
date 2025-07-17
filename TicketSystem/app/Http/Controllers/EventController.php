@@ -13,7 +13,7 @@ class EventController extends Controller
      * Display a listing of the resource.
      */
     // ✅ List all events (GET /event)
-    
+
     public function index(Request $request)
     {
         try {
@@ -37,10 +37,14 @@ class EventController extends Controller
 
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
+
+            if ($page === 'all' || $perPage === 'all') {
+                $events = $query->get();
+            } else {
+                $events = $query->paginate($perPage, ['*'], 'page', $page);
+            }
+
             $countEvent = $query->count();
-
-            $events = $query->paginate($perPage, ['*'], 'page', $page);
-
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
