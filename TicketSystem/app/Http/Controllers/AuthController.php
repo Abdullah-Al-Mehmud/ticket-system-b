@@ -88,6 +88,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+                'permissions' => $user->getAllPermissions()->pluck('name'),
             ]
         ], 200)->withCookie($cookie);
     }
