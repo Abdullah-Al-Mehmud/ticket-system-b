@@ -9,6 +9,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class EventSeeder extends Seeder
 {
@@ -17,20 +18,57 @@ class EventSeeder extends Seeder
      */
     public function run(): void
     {
-        $organizer = User::create([
-            'name' => 'Organizer',
-            'email' => 'organizer@example.com',
-            'password' => Hash::make('password'),
-        ]);
-        $category = Category::create([
-            'name' => fake()->randomElement(['Music', 'Sports', 'Tech', 'Business']),
-            'status' => fake()->randomElement(['active', 'inactive'])
-        ]);
+        $users = [
+            ['name' => 'organizer User1', 'email' => 'organizer1@gmail.com', 'role' => 'organizer'],
+            ['name' => 'Organizer User2', 'email' => 'organizer2@gmail.com', 'role' => 'organizer'],
+            ['name' => 'Regular User3', 'email' => 'organizer3@gmail.com', 'role' => 'organizer'],
+        ];
+
+        foreach ($users as $u) {
+            $user = User::where('email', $u['email'])->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $u['name'],
+                    'email' => $u['email'],
+                    'password' => Hash::make('password'),
+                ]);
+            }
+            $role = Role::firstOrCreate([
+                'name' => $u['role'],
+                'guard_name' => 'api',
+            ]);
+            if (!$user->hasRole($role->name)) {
+                $user->assignRole($role);
+            }
+        }
+
+        $organizers = User::role('organizer', 'api')->get();
+
+        $categoryNames = ['Music', 'Sports', 'Tech', 'Business', 'Comedy'];
+        $categories = [];
+
+        foreach ($categoryNames as $name) {
+            $categories[] = Category::firstOrCreate(
+                ['name' => $name],
+                ['status' => fake()->randomElement(['active', 'inactive'])]
+            );
+        }
+
+        $bannerImages = [
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',  // Nature
+            'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=800&q=80',  // Concert crowd
+            'https://images.unsplash.com/photo-1515165562835-cd0c48e6b0a3?auto=format&fit=crop&w=800&q=80',  // Music instruments
+            'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80',  // Theater stage
+            'https://images.unsplash.com/photo-1464375117522-1311f55a04c7?auto=format&fit=crop&w=800&q=80',  // Sports event
+        ];
+
+
 
         for ($i = 1; $i <= 15; $i++) {
             Event::create([
-                'created_by' => $organizer->id,
-                'category_id' => $category->id,
+                'created_by' => $organizers->random()->id,
+                'category_id' => collect($categories)->random()->id,
                 'title' => 'Event ' . $i,
                 'event_description' => fake()->paragraph(3),
                 'location' => fake()->city(),
@@ -39,7 +77,7 @@ class EventSeeder extends Seeder
                 'ticket_price' => fake()->randomFloat(2, 100, 1000),
                 'status' => fake()->randomElement(['upcoming', 'completed', 'cancelled']),
                 'privacy_policy' => 'All tickets are non-refundable unless the event is cancelled.',
-                'image_url' => 'https://floral-mountain-2867.fly.storage.tigris.dev/media/events/banner/ONI_HASAN_KV_1200x630.png',
+                'image_url' => fake()->randomElement($bannerImages),
             ]);
         }
     }

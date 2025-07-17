@@ -14,15 +14,24 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            // ['name' => 'Music', 'status' => 'active'],
+            ['name' => 'Music', 'status' => 'active'],
             ['name' => 'Sports', 'status' => 'inactive'],
             ['name' => 'Technology', 'status' => 'active'],
             ['name' => 'Theater', 'status' => 'inactive'],
             ['name' => 'Comedy', 'status' => 'active'],
+            ['name' => 'Art', 'status' => 'active'],
+            ['name' => 'Education', 'status' => 'inactive'],
+            ['name' => 'Business', 'status' => 'active'],
+            ['name' => 'Gaming', 'status' => 'active'],
+            ['name' => 'Health', 'status' => 'inactive'],
         ];
 
-        foreach ($categories as $category) {
-            Category::create($category);
+        foreach ($categories as $cat) {
+            $existing = Category::where('name', $cat['name'])->first();
+
+            if (!$existing) {
+                Category::create($cat);
+            }
         }
     }
 }
