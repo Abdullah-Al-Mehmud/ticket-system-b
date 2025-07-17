@@ -48,7 +48,7 @@ Route::middleware(['auth:api'])->group(function () {
         Route::patch('/categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories admin');
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories admin');
 
-        Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:view categories Admin');
+        Route::get('/categories', [CategoryController::class, 'index'])->middleware('permission:view categories admin');
         Route::get('/categories/{id}', [CategoryController::class, 'show'])->middleware('permission:delete categories admin');
 
         Route::get('/event', [EventController::class, 'index'])->middleware('permission:view events admin');
