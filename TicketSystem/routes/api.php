@@ -68,9 +68,10 @@ Route::middleware(['auth:api'])->group(function () {
 
     // ✅ User Permissions
 
-    Route::get('user/dashboard', [UserController::class, 'dashboard'])
-        ->middleware('permission:view user dashboard',);
+Route::get('user/dashboard', [UserController::class, 'dashboard'])
+    ->middleware('permission:view user dashboard');
+
 
     Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');
-    Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:View ticket user');
+    Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:view ticket user');
 });

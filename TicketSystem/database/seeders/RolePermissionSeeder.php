@@ -35,12 +35,16 @@ class RolePermissionSeeder extends Seeder
             'manage tickets admin',
 
             'create ticket user',
-            'View ticket user',
+            'view ticket user',
 
             'view admin dashboard',
             'view organizer dashboard',
             'view user dashboard',
+
+            'view events',
+            'view categories',
         ];
+
 
         // Create all permissions
         foreach ($permissions as $permission) {
