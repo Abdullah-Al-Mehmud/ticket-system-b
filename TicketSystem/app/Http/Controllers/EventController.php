@@ -44,12 +44,13 @@ class EventController extends Controller
                 $events = $query->paginate($perPage, ['*'], 'page', $page);
             }
 
-            $countEvent = $query->count();
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
                 'data' => $events->items(),
-                'total_event' => $countEvent
+                'total_event' => $events->total(),
+                'current_page' => $events->currentPage(),
+                'last_page' => $events->lastPage(),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
