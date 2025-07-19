@@ -33,6 +33,9 @@ Route::middleware(['auth:api'])->group(function () {
 
     // User Manage
     Route::get('/user', [AdminController::class, 'index'])->middleware('permission:manage users admin');
+
+
+    Route::get('/user/dashboard', [UserController::class, 'dashboard'])->middleware('permission:view_user_dashboard');
     Route::get('/user/{id}', [AdminController::class, 'show'])->middleware('permission:manage users admin');
     Route::post('/users', [AdminController::class, 'store'])->middleware('permission:manage users admin');
     Route::patch('/users/{id}', [AdminController::class, 'update'])->middleware('permission:manage users admin');
@@ -68,8 +71,6 @@ Route::middleware(['auth:api'])->group(function () {
 
     // ✅ User Permissions
 
-Route::get('user/dashboard', [UserController::class, 'dashboard'])
-    ->middleware('permission:view user dashboard');
 
 
     Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');

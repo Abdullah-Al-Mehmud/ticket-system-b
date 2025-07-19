@@ -11,6 +11,7 @@ class UserController extends Controller
 {
     public function dashboard()
     {
+        // dd(1);
         try {
             $userId = Auth::id();
 

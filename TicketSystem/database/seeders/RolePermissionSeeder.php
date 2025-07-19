@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -39,7 +38,7 @@ class RolePermissionSeeder extends Seeder
 
             'view admin dashboard',
             'view organizer dashboard',
-            'view user dashboard',
+            'view_user_dashboard',
 
             'view events',
             'view categories',
@@ -72,7 +71,8 @@ class RolePermissionSeeder extends Seeder
                 'view categories',
                 'view user dashboard',
                 'create ticket user',
-                'View ticket user'
+                'View ticket user',
+                'view_user_dashboard',
             ],
         ];
 

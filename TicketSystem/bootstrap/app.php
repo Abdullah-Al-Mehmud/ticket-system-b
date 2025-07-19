@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (UnauthorizedException $e, Request $request) {
+            // dd($e->getMessage());
             return response()->json([
                 'status' => false,
                 "message" => "You does not have the right permissions.",
