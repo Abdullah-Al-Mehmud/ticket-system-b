@@ -220,14 +220,45 @@ class TicketController extends Controller
             $perPage = $request->query('count', 10);
             $page = $request->query('page', 1);
 
-            $tickets = Ticket::with('event')
+            // Eager load event and event.category relationships
+            $tickets = Ticket::with('event.category')
                 ->where('user_id', $userId)
                 ->paginate($perPage, ['*'], 'page', $page);
+
+            // Transform the paginated collection to include category name only
+            $data = $tickets->getCollection()->transform(function ($ticket) {
+                return [
+                    'id' => $ticket->id,
+                    'user_id' => $ticket->user_id,
+                    'event_id' => $ticket->event_id,
+                    'ticket_quantity' => $ticket->ticket_quantity,
+                    'price_per_ticket' => $ticket->price_per_ticket,
+                    'status' => $ticket->status,
+                    'purchased_at' => $ticket->purchased_at,
+                    'created_at' => $ticket->created_at,
+                    'updated_at' => $ticket->updated_at,
+                    'event' => [
+                        'id' => $ticket->event->id,
+                        'title' => $ticket->event->title,
+                        'category_name' => $ticket->event->category->name ?? null, // category name here
+                        'event_description' => $ticket->event->event_description,
+                        'location' => $ticket->event->location,
+                        'start_date' => $ticket->event->start_date,
+                        'end_date' => $ticket->event->end_date,
+                        'ticket_price' => $ticket->event->ticket_price,
+                        'status' => $ticket->event->status,
+                        'privacy_policy' => $ticket->event->privacy_policy,
+                        'image_url' => $ticket->event->image_url,
+                        'created_at' => $ticket->event->created_at,
+                        'updated_at' => $ticket->event->updated_at,
+                    ],
+                ];
+            });
 
             return response()->json([
                 'status' => true,
                 'message' => 'My tickets retrieved successfully',
-                'data' => $tickets->items(),
+                'data' => $data,
                 'total' => $tickets->total(),
             ]);
         } catch (\Exception $e) {
