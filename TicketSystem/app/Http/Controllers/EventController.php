@@ -76,8 +76,11 @@ class EventController extends Controller
     // ✅ Create event (POST /event)
     public function store(Request $request)
     {
+        $user = Auth::guard('api')->user(); // current authenticated user
+
+        // ✅ Validation
         $validator = Validator::make($request->all(), [
-            'category_id' => 'required|exists:categories,id', // ✅ Updated
+            'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'event_description' => 'required|string',
             'location' => 'required|string',
@@ -87,6 +90,7 @@ class EventController extends Controller
             'status' => 'required',
             'privacy_policy' => 'required|string',
             'image_url' => 'required|url',
+            'created_by' => 'sometimes|exists:users,id', // 🟡 Optional if admin
         ]);
 
         if ($validator->fails()) {
@@ -98,8 +102,23 @@ class EventController extends Controller
         }
 
         try {
+            $createdBy = $user->id;
+
+            // ✅ If user is admin and passed `created_by`, allow it
+            if ($user->hasRole('admin') && $request->filled('created_by')) {
+                $createdBy = $request->created_by;
+            }
+
+            // 🔒 If a non-admin tries to override created_by — block it
+            if (!$user->hasRole('admin') && $request->filled('created_by')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not allowed to set created_by.'
+                ], 403);
+            }
+
             $event = Event::create([
-                'created_by' => Auth::guard('api')->id(),
+                'created_by' => $createdBy,
                 'category_id' => $request->category_id,
                 'title' => $request->title,
                 'event_description' => $request->event_description,
@@ -125,6 +144,7 @@ class EventController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Display the specified resource.
