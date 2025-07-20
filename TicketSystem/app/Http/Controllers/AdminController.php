@@ -50,7 +50,7 @@ class AdminController extends Controller
                         'total' => $totalUsers,
                         'admins' => $totalAdmins,
                         'organizers' => $totalOrganizers,
-                        'customers' => $totalCustomers,
+                        'users' => $totalCustomers,
                     ],
                     'events' => [
                         'total' => $totalEvents,
