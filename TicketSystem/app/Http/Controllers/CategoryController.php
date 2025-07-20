@@ -15,18 +15,30 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $page = $request->query('page', 1);
-            $perPage = $request->query('count', 10);
+            $getAll = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
 
-            $events = Category::paginate($perPage, ['*'], 'page', $page);
+            if ($getAll) {
+                $categories = Category::latest()->get();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'All categories retrieved successfully',
+                    'data' => $categories,
+                    'total_categories' => $categories->count()
+                ]);
+            } else {
+                // Continue with pagination
+                $page = $request->query('page', 1);
+                $perPage = $request->query('count', 10);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Categories retrieved successfully',
-                'data' => $events->items(),
-                'total_event' => $events->total()
+                $categories = Category::latest()->paginate($perPage, ['*'], 'page', $page);
 
-            ]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Categories retrieved successfully',
+                    'data' => $categories->items(),
+                    'total_categories' => $categories->total()
+                ]);
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
@@ -35,6 +47,7 @@ class CategoryController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Show the form for creating a new resource.
