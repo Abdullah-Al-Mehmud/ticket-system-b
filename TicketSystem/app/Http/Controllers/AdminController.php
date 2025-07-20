@@ -87,7 +87,9 @@ class AdminController extends Controller
 
             if ($request->has('role')) {
                 $role = $request->input('role');
-                $query->role($role);
+                $query->whereHas('roles', function ($q) use ($role) {
+                    $q->where('name', $role);
+                });
             }
 
             if ($request->has('search')) {
@@ -95,39 +97,62 @@ class AdminController extends Controller
                 $query->where('name', 'like', '%' . $searchTerm . '%');
             }
 
-            $count = $query->count();
 
-            if (is_null($page) && is_null($perPage)) {
+            if (!$request->has('role') && !$request->has('search')) {
                 $users = $query->get();
-            } else {
-                $page = $page ?? 1;
-                $perPage = $perPage ?? 10;
-                $users = $query->paginate($perPage, ['*'], 'page', $page);
-                $users = $users->items(); // convert paginator to array
-            }
-            $formattedUsers = collect($users)->map(function ($user) {
-                $user = $user->toArray();
 
-                if (!empty($user['roles'])) {
-                    $user['role'] = [
-                        'id' => $user['roles'][0]['id'] ?? null,
-                        'name' => $user['roles'][0]['name'] ?? null,
+                $count = $users->count();
+
+                $formattedUsers = $users->map(function ($user) {
+                    $userArray = $user->toArray();
+
+                    if (!empty($userArray['roles'])) {
+                        $userArray['role'] = [
+                            'id' => $userArray['roles'][0]['id'] ?? null,
+                            'name' => $userArray['roles'][0]['name'] ?? null,
+                        ];
+                    } else {
+                        $userArray['role'] = null;
+                    }
+
+                    unset($userArray['roles']);
+
+                    return $userArray;
+                });
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Users fetched successfully (without pagination).',
+                    'data' => $formattedUsers,
+                    'total_users' => $count,
+                ], 200);
+            }
+
+            $usersPaginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+            $usersPaginator->getCollection()->transform(function ($user) {
+                $userArray = $user->toArray();
+
+                if (!empty($userArray['roles'])) {
+                    $userArray['role'] = [
+                        'id' => $userArray['roles'][0]['id'] ?? null,
+                        'name' => $userArray['roles'][0]['name'] ?? null,
                     ];
                 } else {
-                    $user['role'] = null;
+                    $userArray['role'] = null;
                 }
 
-                unset($user['roles']);
+                unset($userArray['roles']);
 
-                return $user;
+                return $userArray;
             });
-
 
             return response()->json([
                 'status' => true,
-                'message' => 'Users fetched successfully.',
-                'data' => $formattedUsers,
-                'total_user' => $count
+                'message' => 'Users fetched successfully (with pagination).',
+                'data' => $usersPaginator->items(),
+                'total_users' => $usersPaginator->total(),
+
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -137,6 +162,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
 
 
 
