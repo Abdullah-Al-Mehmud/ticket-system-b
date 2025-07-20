@@ -83,7 +83,7 @@ class AdminController extends Controller
             $page = $request->query('page', 1);
             $perPage = $request->query('count', 10);
 
-            $query = User::with('roles');
+            $query = User::with('roles')->latest();
 
             if ($request->has('role')) {
                 $role = $request->input('role');
