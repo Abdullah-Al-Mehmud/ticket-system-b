@@ -75,4 +75,5 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');
     Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:view ticket user');
+    Route::get('/ticket/{id}', [TicketController::class, 'show']);
 });

@@ -18,18 +18,31 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
-            $page = $request->query('page', 1);
-            $perPage = $request->query('count', 10);
+            $count = $request->query('count');
 
-            $ticket = Ticket::with('user', 'event')->paginate($perPage, ['*'], 'page', $page);
+            if ($count) {
+                // ✅ Pagination enabled
+                $page = $request->query('page', 1);
+                $ticket = Ticket::with('user', 'event')
+                    ->paginate($count, ['*'], 'page', $page);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'ticket retrieved successfully',
-                'data' => $ticket->items(),
-                'total_event' => $ticket->total()
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Tickets retrieved successfully (paginated)',
+                    'data' => $ticket->items(),
+                    'total_ticket' => $ticket->total()
+                ]);
+            } else {
+                // ✅ No pagination, return all
+                $tickets = Ticket::with('user', 'event')->get();
 
-            ]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'All tickets retrieved successfully',
+                    'data' => $tickets,
+                    'total_ticket' => $tickets->count()
+                ]);
+            }
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
@@ -38,6 +51,7 @@ class TicketController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -50,32 +64,59 @@ class TicketController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
         try {
-            $validatedData = $request->validate([
+            $user = Auth::guard('api')->user();
+
+            // ✅ Step 1: Validate common fields
+            $rules = [
                 'event_id' => 'required|exists:events,id',
                 'ticket_quantity' => 'required|integer|min:1',
-            ], [
-                'event_id.required' => 'Event id required.',
+            ];
+
+            // ✅ Step 2: If admin → allow optional `user_id`
+            if ($user->hasRole('admin')) {
+                $rules['user_id'] = 'sometimes|exists:users,id';
+            }
+
+            $validatedData = $request->validate($rules, [
+                'event_id.required' => 'Event ID is required.',
                 'event_id.exists' => 'Event not found.',
                 'ticket_quantity.required' => 'Ticket quantity is required.',
                 'ticket_quantity.min' => 'Ticket quantity must be at least 1.',
+                'user_id.exists' => 'User not found.',
             ]);
 
-            $userId = Auth::id();
+            // ✅ Step 3: Determine the ticket's owner
+            $userId = $user->id;
 
+            // If admin & user_id is passed → allow override
+            if ($user->hasRole('admin') && $request->filled('user_id')) {
+                $userId = $request->user_id;
+            }
+
+            // ❌ If non-admin tries to send user_id → block
+            if (!$user->hasRole('admin') && $request->filled('user_id')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not allowed to set user_id.'
+                ], 403);
+            }
+
+            // ✅ Step 4: Find event
             $event = Event::findOrFail($validatedData['event_id']);
 
-            // Check if the user already has a ticket for this event
+            // ✅ Step 5: Check existing ticket
             $existingTicket = Ticket::where('user_id', $userId)
                 ->where('event_id', $event->id)
                 ->first();
 
             if ($existingTicket) {
-                // Update existing ticket quantity (or do other logic like adding to existing)
                 $existingTicket->update([
-                    'ticket_quantity' => $existingTicket->ticket_quantity + $validatedData['ticket_quantity']
+                    'ticket_quantity' => $existingTicket->ticket_quantity + $validatedData['ticket_quantity'],
+                    'purchased_at' => now(),
                 ]);
 
                 return response()->json([
@@ -84,7 +125,6 @@ class TicketController extends Controller
                     'data' => $existingTicket
                 ], 200);
             } else {
-                // Create new ticket
                 $ticket = Ticket::create([
                     'user_id' => $userId,
                     'event_id' => $event->id,
@@ -116,13 +156,37 @@ class TicketController extends Controller
 
 
 
+
     /**
      * Display the specified resource.
      */
-    public function show(Ticket $ticket)
+    /**
+     * Display the specified resource.
+     */
+    public function show($id)
     {
-        //
+        try {
+            $ticket = Ticket::with('user', 'event', 'event.category')->findOrFail($id);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket retrieved successfully.',
+                'data' => $ticket
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ticket not found.',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve ticket due to a server error.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
+
 
     /**
      * Show the form for editing the specified resource.
