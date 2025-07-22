@@ -302,7 +302,7 @@ class EventController extends Controller
                 ], 401);
             }
 
-            $events = Event::where('created_by', $userId)
+            $events = Event::latest()->where('created_by', $userId)
                 ->with('organizer', 'category')
                 ->get();
 
