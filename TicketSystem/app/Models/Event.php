@@ -9,15 +9,13 @@ class Event extends Model
     protected $fillable = [
         'created_by',
         'title',
-        'category_id',
         'event_description',
         'location',
         'start_date',
         'end_date',
-        'ticket_price',
-        'status',
         'privacy_policy',
         'image_url',
+        'status',
     ];
 
 
@@ -26,12 +24,13 @@ class Event extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function ticketCategories()
+    {
+        return $this->hasMany(TicketCategory::class);
+    }
+
     public function tickets()
     {
-        return $this->hasMany(Ticket::class);
-    }
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
+        return $this->hasManyThrough(Ticket::class, TicketCategory::class, 'event_id', 'ticket_categories_id');
     }
 }

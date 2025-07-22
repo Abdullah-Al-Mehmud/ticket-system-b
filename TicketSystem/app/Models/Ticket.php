@@ -8,11 +8,10 @@ class Ticket extends Model
 {
     protected $fillable = [
         'user_id',
-        'event_id',
-        'ticket_quantity',
-        'price_per_ticket',
+        'ticket_categories_id',
+        'quantity',
+        'unit_price',
         'status',
-        'purchased_at'
     ];
 
     public function user()
@@ -20,8 +19,13 @@ class Ticket extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function ticketCategory()
+    {
+        return $this->belongsTo(TicketCategory::class, 'ticket_categories_id');
+    }
+
     public function event()
     {
-        return $this->belongsTo(Event::class);
+        return $this->hasOneThrough(Event::class, TicketCategory::class, 'id', 'id', 'ticket_categories_id', 'event_id');
     }
 }
