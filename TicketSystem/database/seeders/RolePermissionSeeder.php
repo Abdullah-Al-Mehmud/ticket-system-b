@@ -71,7 +71,7 @@ class RolePermissionSeeder extends Seeder
                 'view categories',
                 'view user dashboard',
                 'create ticket user',
-                'View ticket user',
+                'view ticket user',
                 'view_user_dashboard',
             ],
         ];

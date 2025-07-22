@@ -23,7 +23,7 @@ class TicketController extends Controller
             if ($count) {
                 // ✅ Pagination enabled
                 $page = $request->query('page', 1);
-                $ticket = Ticket::with('user', 'event')
+                $ticket = Ticket::latest()->with('user', 'event')
                     ->paginate($count, ['*'], 'page', $page);
 
                 return response()->json([
@@ -34,7 +34,7 @@ class TicketController extends Controller
                 ]);
             } else {
                 // ✅ No pagination, return all
-                $tickets = Ticket::with('user', 'event')->get();
+                $tickets = Ticket::latest()->with('user', 'event')->get();
 
                 return response()->json([
                     'status' => true,
@@ -285,7 +285,7 @@ class TicketController extends Controller
             $page = $request->query('page', 1);
 
             // Eager load event and event.category relationships
-            $tickets = Ticket::with('event.category')
+            $tickets = Ticket::latest()->with('event.category')
                 ->where('user_id', $userId)
                 ->paginate($perPage, ['*'], 'page', $page);
 
