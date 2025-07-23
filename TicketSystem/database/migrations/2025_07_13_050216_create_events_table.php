@@ -14,16 +14,14 @@ return new class extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
             $table->string('title');
             $table->text('event_description');
             $table->string('location');
             $table->dateTime('start_date');
             $table->dateTime('end_date');
-            $table->decimal('ticket_price', 10, 2);
-            $table->string('status');
             $table->text('privacy_policy');
             $table->string('image_url');
+            $table->enum('status', allowed: ['Upcoming', 'Live', 'Done', 'Cancelled'])->default('Upcoming');
             $table->timestamps();
         });
     }
