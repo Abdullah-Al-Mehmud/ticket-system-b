@@ -79,7 +79,7 @@ class EventController extends Controller
             'end_date'          => 'required|date|after_or_equal:start_date',
             'privacy_policy'    => 'required|string',
             'image_url'         => 'nullable|url',
-            'status'            => 'required|in:Upcoming,Live,Done,Cancelled',
+            'status'            => 'nullable|in:Upcoming,Live,Done,Cancelled',
             'category_id'       => 'required|exists:categories,id',
             'created_by'        => 'sometimes|exists:users,id',
         ]);
@@ -116,8 +116,9 @@ class EventController extends Controller
                 'end_date'          => $request->end_date,
                 'privacy_policy'    => $request->privacy_policy,
                 'image_url'         => $request->image_url,
-                'status'            => $request->status,
+                'status'            => $request->status ?? 'Upcoming',
             ]);
+
 
             return response()->json([
                 'status' => true,
