@@ -32,26 +32,11 @@ class EventController extends Controller
             if ($request->boolean('all')) {
                 $events = $query->get();
 
-                $formatted = $events->map(function ($event) {
-                    return [
-                        'id' => $event->id,
-                        'category_name' => $event->category?->name,
-                        'title' => $event->title,
-                        'event_description' => $event->event_description,
-                        'location' => $event->location,
-                        'privacy_policy' => $event->privacy_policy,
-                        'image_url' => $event->image_url,
-                        'start_date' => $event->start_date,
-                        'end_date' => $event->end_date,
-                        'status' => $event->status,
-                    ];
-                });
-
                 return response()->json([
                     'status' => true,
                     'message' => 'Events retrieved successfully',
-                    'data' => $formatted,
-                    'total' => $formatted->count(),
+                    'data' => $events,
+                    'total' => $events->count(),
                 ]);
             }
 
@@ -59,25 +44,10 @@ class EventController extends Controller
             $perPage = (int) $request->get('count', 10);
             $events = $query->paginate($perPage, ['*'], 'page', $page);
 
-            $formatted = $events->getCollection()->map(function ($event) {
-                return [
-                    'id' => $event->id,
-                    'category_name' => $event->category?->name,
-                    'title' => $event->title,
-                    'event_description' => $event->event_description,
-                    'location' => $event->location,
-                    'privacy_policy' => $event->privacy_policy,
-                    'image_url' => $event->image_url,
-                    'start_date' => $event->start_date,
-                    'end_date' => $event->end_date,
-                    'status' => $event->status,
-                ];
-            });
-
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
-                'data' => $formatted,
+                'data' => $events->items(),
                 'total' => $events->total(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),
@@ -96,6 +66,7 @@ class EventController extends Controller
 
 
 
+
     public function store(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -107,7 +78,7 @@ class EventController extends Controller
             'start_date'        => 'required|date',
             'end_date'          => 'required|date|after_or_equal:start_date',
             'privacy_policy'    => 'required|string',
-            'image_url'         => 'required|url',
+            'image_url'         => 'nullable|url',
             'status'            => 'required|in:Upcoming,Live,Done,Cancelled',
             'category_id'       => 'required|exists:categories,id',
             'created_by'        => 'sometimes|exists:users,id',
@@ -217,7 +188,7 @@ class EventController extends Controller
             'start_date'        => 'sometimes|required|date',
             'end_date'          => 'sometimes|required|date|after_or_equal:start_date',
             'privacy_policy'    => 'sometimes|required|string',
-            'image_url'         => 'sometimes|required|url',
+            'image_url'         => 'sometimes|nullable|url',
             'status'            => 'sometimes|required|in:Upcoming,Live,Done,Cancelled',
             'category_id'       => 'sometimes|required|exists:categories,id',
             'created_by'        => 'prohibited',
@@ -296,7 +267,6 @@ class EventController extends Controller
                 ], 401);
             }
 
-
             $query = Event::with('category')->where('created_by', $userId);
             $query->orderBy('created_at', 'desc');
 
@@ -305,26 +275,10 @@ class EventController extends Controller
 
             $events = $query->paginate($perPage, ['*'], 'page', $page);
 
-            $data = $events->getCollection()->map(function ($event) {
-                return [
-                    'id' => $event->id,
-                    'category_name' => $event->category?->name,
-                    'title' => $event->title,
-                    'event_description' => $event->event_description,
-                    'location' => $event->location,
-                    'privacy_policy' => $event->privacy_policy,
-                    'image_url' => $event->image_url,
-                    'start_date' => $event->start_date,
-                    'end_date' => $event->end_date,
-                    'status' => $event->status,
-                    'created_at' => $event->created_at,
-                ];
-            });
-
             return response()->json([
                 'status' => true,
                 'message' => 'Your events retrieved successfully',
-                'data' => $data,
+                'data' => $events->items(),
                 'total' => $events->total(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),

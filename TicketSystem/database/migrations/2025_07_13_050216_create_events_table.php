@@ -21,7 +21,7 @@ return new class extends Migration
             $table->dateTime('start_date');
             $table->dateTime('end_date');
             $table->text('privacy_policy');
-            $table->string('image_url');
+            $table->string('image_url')->nullable();
             $table->enum('status', allowed: ['Upcoming', 'Live', 'Done', 'Cancelled'])->default('Upcoming');
             $table->timestamps();
         });
