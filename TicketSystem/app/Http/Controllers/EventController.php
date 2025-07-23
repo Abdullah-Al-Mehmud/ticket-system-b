@@ -166,31 +166,29 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = Event::with('organizer', 'category')->find($id);
+            $event = Event::with(['organizer', 'category', 'ticketCategories'])->find($id);
 
             if (!$event) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Event not found'
+                    'message' => 'Event not found',
                 ], 404);
             }
 
             return response()->json([
                 'status' => true,
                 'message' => 'Event details retrieved successfully',
-                'data' => $event
+                'data' => $event,
             ], 200);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging purposes
-            // \Log::error('Error retrieving event (ID: ' . $id . '): ' . $e->getMessage());
-
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve event. An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function update(Request $request, $id)
     {
@@ -298,7 +296,7 @@ class EventController extends Controller
                 ], 401);
             }
 
-           
+
             $query = Event::with('category')->where('created_by', $userId);
             $query->orderBy('created_at', 'desc');
 
