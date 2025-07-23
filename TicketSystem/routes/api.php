@@ -65,7 +65,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 
     Route::post('/event', [EventController::class, 'store'])->middleware('permission:create events organizer');
-    Route::get('/events', [EventController::class, 'myEvent'])->middleware('permission:view events organizer');
+    Route::get('/organizer-event', [EventController::class, 'myEvent'])->middleware('permission:view events organizer');
     Route::patch('/event/{id}', [EventController::class, 'update'])->middleware('permission:edit events organizer');
     Route::delete('/event/{id}', [EventController::class, 'destroy'])->middleware('permission:delete events organizer');
 
