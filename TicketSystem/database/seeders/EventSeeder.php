@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Event;
 use App\Models\User;
+use App\Models\Category; // ✅ Added
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -33,7 +34,6 @@ class EventSeeder extends Seeder
                 ]);
             }
 
-            // Assuming default guard 'web' here, change if you use 'api'
             $role = Role::firstOrCreate([
                 'name' => $u['role'],
                 'guard_name' => 'api',
@@ -44,7 +44,15 @@ class EventSeeder extends Seeder
             }
         }
 
-        $organizers = User::role('organizer','api')->get();
+        $organizers = User::role('organizer', 'api')->get();
+
+        // ✅ Create sample categories
+        $categories = ['Conference', 'Workshop', 'Webinar', 'Meetup', 'Networking Event'];
+        foreach ($categories as $cat) {
+            Category::firstOrCreate(['name' => $cat]);
+        }
+
+        $allCategories = Category::all(); // ✅ Fetch categories
 
         $bannerImages = [
             'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
@@ -58,15 +66,16 @@ class EventSeeder extends Seeder
 
         for ($i = 1; $i <= 15; $i++) {
             Event::create([
-                'created_by' => $organizers->random()->id,
-                'title' => 'Event ' . $i,
+                'created_by'        => $organizers->random()->id,
+                'category_id'       => $allCategories->random()->id, // ✅ category added
+                'title'             => 'Event ' . $i,
                 'event_description' => fake()->paragraph(3),
-                'location' => fake()->city(),
-                'start_date' => Carbon::now()->addDays($i),
-                'end_date' => Carbon::now()->addDays($i)->addHours(3),
-                'privacy_policy' => 'All tickets are non-refundable unless the event is cancelled.',
-                'image_url' => fake()->randomElement($bannerImages),
-                'status' => fake()->randomElement($statusOptions),
+                'location'          => fake()->city(),
+                'start_date'        => Carbon::now()->addDays($i),
+                'end_date'          => Carbon::now()->addDays($i)->addHours(3),
+                'privacy_policy'    => 'All tickets are non-refundable unless the event is cancelled.',
+                'image_url'         => fake()->randomElement($bannerImages),
+                'status'            => fake()->randomElement($statusOptions),
             ]);
         }
     }

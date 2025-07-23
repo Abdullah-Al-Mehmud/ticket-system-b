@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
             $table->string('name');
             $table->decimal('price', 10, 2);
-            $table->dateTime('sales_start');
-            $table->dateTime('sales_end');
+            $table->dateTime('sales_start')->nullable();
+            $table->dateTime('sales_end')->nullable();
             $table->integer('total_quantity');
             $table->integer('sold_quantity');
             $table->timestamps();

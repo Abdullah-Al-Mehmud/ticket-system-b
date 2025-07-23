@@ -8,6 +8,7 @@ class Event extends Model
 {
     protected $fillable = [
         'created_by',
+        'category_id',
         'title',
         'event_description',
         'location',
@@ -31,6 +32,10 @@ class Event extends Model
 
     public function tickets()
     {
-        return $this->hasManyThrough(Ticket::class, TicketCategory::class, 'event_id', 'ticket_categories_id');
+        return $this->hasManyThrough(Ticket::class, TicketCategory::class, 'event_id', 'ticket_category_id');
+    }
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 }
