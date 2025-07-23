@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrganizerController;
+use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -76,4 +77,9 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');
     Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:view ticket user');
     Route::get('/ticket/{id}', [TicketController::class, 'show']);
+
+    //Ticket Category CRUD
+    Route::post('/ticket-category', [TicketCategoryController::class, 'store']);
+    Route::patch('/ticket-category/{id}', [TicketCategoryController::class, 'update']);
+    Route::delete('/ticket-category/{id}', [TicketCategoryController::class, 'destroy']);
 });
