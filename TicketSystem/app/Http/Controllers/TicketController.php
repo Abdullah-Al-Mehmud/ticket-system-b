@@ -12,145 +12,52 @@ use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         try {
             $count = $request->query('count');
+            $tickets = $count
+                ? Ticket::with('user', 'ticketCategory')->paginate($count)
+                : Ticket::with('user', 'ticketCategory')->get();
 
-            if ($count) {
-                // ✅ Pagination enabled
-                $page = $request->query('page', 1);
-                $ticket = Ticket::latest()->with('user', 'event')
-                    ->paginate($count, ['*'], 'page', $page);
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Tickets retrieved successfully (paginated)',
-                    'data' => $ticket->items(),
-                    'total_ticket' => $ticket->total()
-                ]);
-            } else {
-                // ✅ No pagination, return all
-                $tickets = Ticket::latest()->with('user', 'event')->get();
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'All tickets retrieved successfully',
-                    'data' => $tickets,
-                    'total_ticket' => $tickets->count()
-                ]);
-            }
-        } catch (\Throwable $e) {
             return response()->json([
-                'status' => false,
-                'message' => 'Something went wrong!',
-                'error' => $e->getMessage()
-            ], 500);
+                'status' => true,
+                'message' => 'Tickets retrieved successfully',
+                'data' => $tickets,
+                'total' => $count ? $tickets->total() : count($tickets)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Error fetching tickets', 'error' => $e->getMessage()], 500);
         }
     }
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
 
     public function store(Request $request)
     {
         try {
             $user = Auth::guard('api')->user();
 
-            // ✅ Step 1: Validate common fields
-            $rules = [
-                'event_id' => 'required|exists:events,id',
-                'ticket_quantity' => 'required|integer|min:1',
-            ];
-
-            // ✅ Step 2: If admin → allow optional `user_id`
-            if ($user->hasRole('admin')) {
-                $rules['user_id'] = 'sometimes|exists:users,id';
-            }
-
-            $validatedData = $request->validate($rules, [
-                'event_id.required' => 'Event ID is required.',
-                'event_id.exists' => 'Event not found.',
-                'ticket_quantity.required' => 'Ticket quantity is required.',
-                'ticket_quantity.min' => 'Ticket quantity must be at least 1.',
-                'user_id.exists' => 'User not found.',
+            $validated = $request->validate([
+                'ticket_category_id' => 'required|exists:ticket_categories,id',
+                'quantity' => 'required|integer|min:1',
+                'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
 
-            // ✅ Step 3: Determine the ticket's owner
-            $userId = $user->id;
+            $ticket = Ticket::create([
+                'user_id' => $user->id,
+                'ticket_category_id' => $validated['ticket_category_id'],
+                'quantity' => $validated['quantity'],
+                'status' => $validated['status'] ?? 'Confirmed',
+            ]);
 
-            // If admin & user_id is passed → allow override
-            if ($user->hasRole('admin') && $request->filled('user_id')) {
-                $userId = $request->user_id;
-            }
-
-            // ❌ If non-admin tries to send user_id → block
-            if (!$user->hasRole('admin') && $request->filled('user_id')) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You are not allowed to set user_id.'
-                ], 403);
-            }
-
-            // ✅ Step 4: Find event
-            $event = Event::findOrFail($validatedData['event_id']);
-
-            // ✅ Step 5: Check existing ticket
-            $existingTicket = Ticket::where('user_id', $userId)
-                ->where('event_id', $event->id)
-                ->first();
-
-            if ($existingTicket) {
-                $existingTicket->update([
-                    'ticket_quantity' => $existingTicket->ticket_quantity + $validatedData['ticket_quantity'],
-                    'purchased_at' => now(),
-                ]);
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Ticket quantity updated successfully.',
-                    'data' => $existingTicket
-                ], 200);
-            } else {
-                $ticket = Ticket::create([
-                    'user_id' => $userId,
-                    'event_id' => $event->id,
-                    'ticket_quantity' => $validatedData['ticket_quantity'],
-                    'price_per_ticket' => $event->ticket_price,
-                    'status' => 'booked',
-                    'purchased_at' => now(),
-                ]);
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Ticket booked successfully.',
-                    'data' => $ticket
-                ], 201);
-            }
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket created successfully',
+                'data' => $ticket
+            ], 201);
         } catch (ValidationException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->validator->errors()->first()
-            ], 422);
+            return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to book ticket due to a server error.',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to create ticket', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -280,57 +187,22 @@ class TicketController extends Controller
     public function myTickets(Request $request)
     {
         try {
-            $userId = Auth::id();
+            $user = Auth::guard('api')->user();
             $perPage = $request->query('count', 10);
-            $page = $request->query('page', 1);
 
-            // Eager load event and event.category relationships
-            $tickets = Ticket::latest()->with('event.category')
-                ->where('user_id', $userId)
-                ->paginate($perPage, ['*'], 'page', $page);
-
-            // Transform the paginated collection to include category name only
-            $data = $tickets->getCollection()->transform(function ($ticket) {
-                return [
-                    'id' => $ticket->id,
-                    'user_id' => $ticket->user_id,
-                    'event_id' => $ticket->event_id,
-                    'ticket_quantity' => $ticket->ticket_quantity,
-                    'price_per_ticket' => $ticket->price_per_ticket,
-                    'status' => $ticket->status,
-                    'purchased_at' => $ticket->purchased_at,
-                    'created_at' => $ticket->created_at,
-                    'updated_at' => $ticket->updated_at,
-                    'event' => [
-                        'id' => $ticket->event->id,
-                        'title' => $ticket->event->title,
-                        'category_name' => $ticket->event->category->name ?? null, // category name here
-                        'event_description' => $ticket->event->event_description,
-                        'location' => $ticket->event->location,
-                        'start_date' => $ticket->event->start_date,
-                        'end_date' => $ticket->event->end_date,
-                        'ticket_price' => $ticket->event->ticket_price,
-                        'status' => $ticket->event->status,
-                        'privacy_policy' => $ticket->event->privacy_policy,
-                        'image_url' => $ticket->event->image_url,
-                        'created_at' => $ticket->event->created_at,
-                        'updated_at' => $ticket->event->updated_at,
-                    ],
-                ];
-            });
+            $tickets = Ticket::with('ticketCategory')
+                ->where('user_id', $user->id)
+                ->latest()
+                ->paginate($perPage);
 
             return response()->json([
                 'status' => true,
                 'message' => 'My tickets retrieved successfully',
-                'data' => $data,
-                'total' => $tickets->total(),
+                'data' => $tickets->items(),
+                'total' => $tickets->total()
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to retrieve tickets',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to retrieve your tickets', 'error' => $e->getMessage()], 500);
         }
     }
 }
