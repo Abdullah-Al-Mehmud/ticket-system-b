@@ -190,7 +190,7 @@ class TicketController extends Controller
             $user = Auth::guard('api')->user();
             $perPage = $request->query('count', 10);
 
-            $tickets = Ticket::with('ticketCategory')
+            $tickets = Ticket::with('ticketCategory','ticketCategory.event')
                 ->where('user_id', $user->id)
                 ->latest()
                 ->paginate($perPage);
