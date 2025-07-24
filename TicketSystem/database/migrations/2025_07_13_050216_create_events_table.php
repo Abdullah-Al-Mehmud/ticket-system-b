@@ -20,10 +20,9 @@ return new class extends Migration
             $table->string('location');
             $table->dateTime('start_date');
             $table->dateTime('end_date');
-            $table->decimal('ticket_price', 10, 2);
-            $table->string('status');
             $table->text('privacy_policy');
-            $table->string('image_url');
+            $table->string('image_url')->nullable();
+            $table->enum('status', allowed: ['Upcoming', 'Live', 'Done', 'Cancelled'])->default('Upcoming');
             $table->timestamps();
         });
     }

@@ -9,46 +9,46 @@ use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    // ✅ List all events (GET /event)
 
     public function index(Request $request)
     {
         try {
-            $query = Event::with('organizer', 'category');
+            $query = Event::with('category');
 
-            if ($request->has('category_id')) {
-                $query->where('category_id', $request->category_id);
+            if ($request->filled('search')) {
+                $query->where('title', 'like', '%' . $request->search . '%');
             }
 
-            if ($request->has('status')) {
+            if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
 
-
-            if ($request->has('search')) {
-                $search = strtolower($request->query('search'));
-                $query->whereRaw('LOWER(title) LIKE ?', ["%$search%"]);
+            if ($request->filled('date')) {
+                $query->whereDate('created_at', $request->date);
             }
 
             $query->orderBy('created_at', 'desc');
 
-            $page = $request->query('page', 1);
-            $perPage = $request->query('count', 10);
-
-            if ($page === 'all' || $perPage === 'all') {
+            if ($request->boolean('all')) {
                 $events = $query->get();
-            } else {
-                $events = $query->paginate($perPage, ['*'], 'page', $page);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Events retrieved successfully',
+                    'data' => $events,
+                    'total' => $events->count(),
+                ]);
             }
+
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('count', 10);
+            $events = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Events retrieved successfully',
                 'data' => $events->items(),
-                'total_event' => $events->total(),
+                'total' => $events->total(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),
             ]);
@@ -56,41 +56,32 @@ class EventController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Something went wrong!',
-                'error' => $e->getMessage()
+                'error' => config('app.debug') ? $e->getMessage() : 'Server Error',
             ], 500);
         }
     }
 
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    // ✅ Create event (POST /event)
+
+
+
+
     public function store(Request $request)
     {
-        $user = Auth::guard('api')->user(); // current authenticated user
+        $user = Auth::guard('api')->user();
 
-        // ✅ Validation
         $validator = Validator::make($request->all(), [
-            'category_id' => 'required|exists:categories,id',
-            'title' => 'required|string|max:255',
+            'title'             => 'required|string|max:255',
             'event_description' => 'required|string',
-            'location' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'ticket_price' => 'required|numeric|min:0',
-            'status' => 'required',
-            'privacy_policy' => 'required|string',
-            'image_url' => 'required|url',
-            'created_by' => 'sometimes|exists:users,id', // 🟡 Optional if admin
+            'location'          => 'required|string',
+            'start_date'        => 'required|date',
+            'end_date'          => 'required|date|after_or_equal:start_date',
+            'privacy_policy'    => 'required|string',
+            'image_url'         => 'nullable|url',
+            'status'            => 'nullable|in:Upcoming,Live,Done,Cancelled',
+            'category_id'       => 'required|exists:categories,id',
+            'created_by'        => 'sometimes|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -104,12 +95,10 @@ class EventController extends Controller
         try {
             $createdBy = $user->id;
 
-            // ✅ If user is admin and passed `created_by`, allow it
             if ($user->hasRole('admin') && $request->filled('created_by')) {
                 $createdBy = $request->created_by;
             }
 
-            // 🔒 If a non-admin tries to override created_by — block it
             if (!$user->hasRole('admin') && $request->filled('created_by')) {
                 return response()->json([
                     'status' => false,
@@ -118,18 +107,18 @@ class EventController extends Controller
             }
 
             $event = Event::create([
-                'created_by' => $createdBy,
-                'category_id' => $request->category_id,
-                'title' => $request->title,
+                'created_by'        => $createdBy,
+                'category_id'       => $request->category_id,
+                'title'             => $request->title,
                 'event_description' => $request->event_description,
-                'location' => $request->location,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
-                'ticket_price' => $request->ticket_price,
-                'status' => $request->status,
-                'privacy_policy' => $request->privacy_policy,
-                'image_url' => $request->image_url,
+                'location'          => $request->location,
+                'start_date'        => $request->start_date,
+                'end_date'          => $request->end_date,
+                'privacy_policy'    => $request->privacy_policy,
+                'image_url'         => $request->image_url,
+                'status'            => $request->status ?? 'Upcoming',
             ]);
+
 
             return response()->json([
                 'status' => true,
@@ -146,73 +135,64 @@ class EventController extends Controller
     }
 
 
-    /**
-     * Display the specified resource.
-     */
-    // ✅ Show single event by ID (GET /event/{id})
     public function show($id)
     {
         try {
-            $event = Event::with('organizer', 'category')->find($id);
+            $event = Event::with(['organizer', 'category', 'ticketCategories'])->find($id);
 
             if (!$event) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Event not found'
+                    'message' => 'Event not found',
                 ], 404);
             }
 
             return response()->json([
                 'status' => true,
                 'message' => 'Event details retrieved successfully',
-                'data' => $event
+                'data' => $event,
             ], 200);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging purposes
-            // \Log::error('Error retrieving event (ID: ' . $id . '): ' . $e->getMessage());
-
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve event. An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Event $event)
-    {
-        //
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    // ✅ Update (PATCH /event/{id})
+
     public function update(Request $request, $id)
     {
-        // 1. Find the event
+        $user = Auth::guard('api')->user();
+
         $event = Event::find($id);
 
         if (!$event) {
             return response()->json([
                 'status' => false,
-                'message' => 'Event not found'
+                'message' => 'Event not found.'
             ], 404);
         }
 
+        if (!$user->hasRole('admin') && $event->created_by !== $user->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized to update this event.'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id', // ✅ Updated
-            'event_description' => 'required|string',
-            'location' => 'required|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'ticket_price' => 'required|numeric|min:0',
-            'status' => 'required|string',
-            'privacy_policy' => 'required|string',
-            'image_url' => 'required|url',
+            'title'             => 'sometimes|required|string|max:255',
+            'event_description' => 'sometimes|required|string',
+            'location'          => 'sometimes|required|string',
+            'start_date'        => 'sometimes|required|date',
+            'end_date'          => 'sometimes|required|date|after_or_equal:start_date',
+            'privacy_policy'    => 'sometimes|required|string',
+            'image_url'         => 'sometimes|nullable|url',
+            'status'            => 'sometimes|required|in:Upcoming,Live,Done,Cancelled',
+            'category_id'       => 'sometimes|required|exists:categories,id',
+            'created_by'        => 'prohibited',
         ]);
 
         if ($validator->fails()) {
@@ -224,63 +204,50 @@ class EventController extends Controller
         }
 
         try {
-            $event->update([
-                'title' => $request->title,
-                'category_id' => $request->category_id, // ✅ Updated
-                'event_description' => $request->event_description,
-                'location' => $request->location,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
-                'ticket_price' => $request->ticket_price,
-                'status' => $request->status,
-                'privacy_policy' => $request->privacy_policy,
-                'image_url' => $request->image_url,
-            ]);
+            $event->update($request->only([
+                'title',
+                'event_description',
+                'location',
+                'start_date',
+                'end_date',
+                'privacy_policy',
+                'image_url',
+                'status',
+                'category_id'
+            ]));
 
             return response()->json([
                 'status' => true,
-                'message' => 'Event updated successfully',
+                'message' => 'Event updated successfully!',
                 'data' => $event
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to update event. Please try again.',
+                'message' => 'Failed to update event.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    // ✅ Delete event (DELETE /event/{id})
+
     public function destroy($id)
     {
         $event = Event::find($id);
-
-
         if (!$event) {
             return response()->json([
                 'status' => false,
                 'message' => 'Event not found'
             ], 404);
         }
-
-
         try {
             $event->delete();
-
-
             return response()->json([
                 'status' => true,
                 'message' => 'Event deleted successfully'
             ], 200);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging purposes
-            // \Log::error('Error deleting event (ID: ' . $id . '): ' . $e->getMessage());
-
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to delete event. An unexpected error occurred.',
@@ -289,11 +256,10 @@ class EventController extends Controller
         }
     }
 
-    public function myEvent()
+    public function myEvent(Request $request)
     {
         try {
             $userId = Auth::id();
-            // dd($userId);
 
             if (!$userId) {
                 return response()->json([
@@ -302,19 +268,23 @@ class EventController extends Controller
                 ], 401);
             }
 
-            $events = Event::latest()->where('created_by', $userId)
-                ->with('organizer', 'category')
-                ->get();
+            $query = Event::with('category')->where('created_by', $userId);
+            $query->orderBy('created_at', 'desc');
+
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('count', 10);
+
+            $events = $query->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Your events retrieved successfully',
-                'data' => $events
+                'data' => $events->items(),
+                'total' => $events->total(),
+                'current_page' => $events->currentPage(),
+                'last_page' => $events->lastPage(),
             ], 200);
         } catch (\Exception $e) {
-            // Optional: Log the error for debugging purposes
-            // \Log::error('Error retrieving events for user ' . Auth::id() . ': ' . $e->getMessage());
-
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to retrieve your events. An unexpected error occurred.',
