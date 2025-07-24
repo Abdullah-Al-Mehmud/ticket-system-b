@@ -9,11 +9,50 @@ use Illuminate\Support\Facades\Validator;
 class TicketCategoryController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        //
-    }
+        try {
+            $query = TicketCategory::with(['event']);
 
+
+            if ($request->filled('search')) {
+                $query->where('name', 'like', '%' . $request->search . '%');
+            }
+
+            $query->orderBy('created_at', 'desc');
+
+            if ($request->boolean('all')) {
+                $ticketCategories = $query->get();
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Ticket categories retrieved successfully',
+                    'data' => $ticketCategories,
+                    'total' => $ticketCategories->count(),
+                ]);
+            }
+
+            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->get('count', 10);
+
+            $ticketCategories = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket categories retrieved successfully',
+                'data' => $ticketCategories->items(),
+                'total' => $ticketCategories->total(),
+                'current_page' => $ticketCategories->currentPage(),
+                'last_page' => $ticketCategories->lastPage(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Something went wrong!',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server Error',
+            ], 500);
+        }
+    }
 
     public function store(Request $request)
     {
