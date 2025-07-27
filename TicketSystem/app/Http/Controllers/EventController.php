@@ -27,7 +27,7 @@ class EventController extends Controller
                 $query->whereDate('created_at', $request->date);
             }
 
-            $query->orderBy('created_at', 'desc');
+            $query->orderBy('id', 'desc');
 
             if ($request->boolean('all')) {
                 $events = $query->get();
