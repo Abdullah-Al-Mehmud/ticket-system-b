@@ -13,7 +13,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Event::with('category');
+            $query = Event::with('category','organizer');
 
             if ($request->filled('search')) {
                 $query->where('title', 'like', '%' . $request->search . '%');
