@@ -35,34 +35,36 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         try {
-            $user = Auth::guard('api')->user();
+            $authUser = Auth::guard('api')->user();
 
             $validated = $request->validate([
                 'ticket_category_id' => 'required|exists:ticket_categories,id',
                 'quantity' => 'required|integer|min:1',
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
+                'user_id' => 'sometimes|exists:users,id',
             ]);
 
-            $existingTicket = Ticket::where('user_id', $user->id)
+            $userId = isset($validated['user_id']) && $authUser->hasRole('admin')
+                ? $validated['user_id']
+                : $authUser->id;
+
+            $existingTicket = Ticket::where('user_id', $userId)
                 ->where('ticket_category_id', $validated['ticket_category_id'])
                 ->where('status', $validated['status'] ?? 'Confirmed')
                 ->first();
 
             if ($existingTicket) {
-
                 $existingTicket->quantity += $validated['quantity'];
                 $existingTicket->save();
-
                 $ticket = $existingTicket;
             } else {
                 $ticket = Ticket::create([
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'ticket_category_id' => $validated['ticket_category_id'],
                     'quantity' => $validated['quantity'],
                     'status' => $validated['status'] ?? 'Confirmed',
                 ]);
             }
-
 
             $TicketCategory = TicketCategory::find($validated['ticket_category_id']);
             $TicketCategory->sold_quantity += $validated['quantity'];
@@ -82,10 +84,12 @@ class TicketController extends Controller
 
 
 
+
+
     public function show($id)
     {
         try {
-            $ticket = Ticket::with('user', 'event', 'event.category')->findOrFail($id);
+            $ticket = Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->findOrFail($id);
 
             return response()->json([
                 'status' => true,
@@ -113,14 +117,18 @@ class TicketController extends Controller
         try {
             $user = Auth::guard('api')->user();
 
+            if (!$user->hasRole('admin')) {
+                return response()->json(['status' => false, 'message' => 'Unauthorized. Only admins can update tickets.'], 403);
+            }
+
             $validated = $request->validate([
                 'ticket_category_id' => 'required|exists:ticket_categories,id',
                 'quantity' => 'required|integer|min:1',
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
+            $ticket = Ticket::where('id', $id)->first();
 
-            $ticket = Ticket::where('id', $id)->where('user_id', $user->id)->first();
-
+            // dd($ticket);
             if (!$ticket) {
                 return response()->json(['status' => false, 'message' => 'Ticket not found'], 404);
             }
