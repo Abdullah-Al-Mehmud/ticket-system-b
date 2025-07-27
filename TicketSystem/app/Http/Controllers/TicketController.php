@@ -18,8 +18,8 @@ class TicketController extends Controller
         try {
             $count = $request->query('count');
             $tickets = $count
-                ? Ticket::with('user', 'ticketCategory')->paginate($count)
-                : Ticket::with('user', 'ticketCategory')->get();
+                ? Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->paginate($count)
+                : Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->get();
 
             return response()->json([
                 'status' => true,
@@ -81,9 +81,6 @@ class TicketController extends Controller
             return response()->json(['status' => false, 'message' => 'Failed to create/update ticket', 'error' => $e->getMessage()], 500);
         }
     }
-
-
-
 
 
     public function show($id)
