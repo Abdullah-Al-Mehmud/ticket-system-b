@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Ticket;
+use App\Models\TicketCategory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,34 +43,46 @@ class TicketController extends Controller
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
 
-            $ticket = Ticket::create([
-                'user_id' => $user->id,
-                'ticket_category_id' => $validated['ticket_category_id'],
-                'quantity' => $validated['quantity'],
-                'status' => $validated['status'] ?? 'Confirmed',
-            ]);
+            $existingTicket = Ticket::where('user_id', $user->id)
+                ->where('ticket_category_id', $validated['ticket_category_id'])
+                ->where('status', $validated['status'] ?? 'Confirmed')
+                ->first();
+
+            if ($existingTicket) {
+
+                $existingTicket->quantity += $validated['quantity'];
+                $existingTicket->save();
+
+                $ticket = $existingTicket;
+            } else {
+                $ticket = Ticket::create([
+                    'user_id' => $user->id,
+                    'ticket_category_id' => $validated['ticket_category_id'],
+                    'quantity' => $validated['quantity'],
+                    'status' => $validated['status'] ?? 'Confirmed',
+                ]);
+            }
+
+
+            $TicketCategory = TicketCategory::find($validated['ticket_category_id']);
+            $TicketCategory->sold_quantity += $validated['quantity'];
+            $TicketCategory->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket created successfully',
+                'message' => $existingTicket ? 'Ticket updated successfully' : 'Ticket created successfully',
                 'data' => $ticket
-            ], 201);
+            ], $existingTicket ? 200 : 201);
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Failed to create ticket', 'error' => $e->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to create/update ticket', 'error' => $e->getMessage()], 500);
         }
     }
 
 
 
 
-    /**
-     * Display the specified resource.
-     */
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         try {
@@ -95,17 +108,7 @@ class TicketController extends Controller
     }
 
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Ticket $ticket)
-    {
-        //
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         try {
@@ -148,9 +151,6 @@ class TicketController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
         $ticket = Ticket::find($id);
@@ -190,7 +190,7 @@ class TicketController extends Controller
             $user = Auth::guard('api')->user();
             $perPage = $request->query('count', 10);
 
-            $tickets = Ticket::with('ticketCategory','ticketCategory.event')
+            $tickets = Ticket::with('ticketCategory', 'ticketCategory.event')
                 ->where('user_id', $user->id)
                 ->latest()
                 ->paginate($perPage);
