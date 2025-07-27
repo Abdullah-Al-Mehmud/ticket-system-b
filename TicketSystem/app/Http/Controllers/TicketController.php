@@ -82,7 +82,6 @@ class TicketController extends Controller
 
 
 
-
     public function show($id)
     {
         try {
@@ -112,44 +111,56 @@ class TicketController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $ticket = Ticket::findOrFail($id);
-            $validatedData = $request->validate([
-                'event_id' => 'sometimes|exists:events,id',
-                'ticket_quantity' => 'sometimes|integer|min:1',
-                'status' => 'sometimes|string|in:booked,refunded,canceled',
-            ], [
-                'event_id.exists' => 'The selected event does not exist.',
-                'ticket_quantity.integer' => 'The ticket quantity must be a whole number.',
-                'ticket_quantity.min' => 'The ticket quantity must be at least 1.',
-                'status.in' => 'The status must be one of the allowed values (e.g., booked, refunded, canceled).',
+            $user = Auth::guard('api')->user();
+
+            $validated = $request->validate([
+                'ticket_category_id' => 'required|exists:ticket_categories,id',
+                'quantity' => 'required|integer|min:1',
+                'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
 
-            $ticket->update($validatedData);
+            $ticket = Ticket::where('id', $id)->where('user_id', $user->id)->first();
+
+            if (!$ticket) {
+                return response()->json(['status' => false, 'message' => 'Ticket not found'], 404);
+            }
+
+            $oldQuantity = $ticket->quantity;
+            $oldCategoryId = $ticket->ticket_category_id;
+
+
+            $ticket->ticket_category_id = $validated['ticket_category_id'];
+            $ticket->quantity = $validated['quantity'];
+            $ticket->status = $validated['status'] ?? $ticket->status;
+            $ticket->save();
+
+            if ($oldCategoryId != $validated['ticket_category_id']) {
+                $oldCategory = TicketCategory::find($oldCategoryId);
+                $oldCategory->sold_quantity -= $oldQuantity;
+                $oldCategory->save();
+
+                $newCategory = TicketCategory::find($validated['ticket_category_id']);
+                $newCategory->sold_quantity += $validated['quantity'];
+                $newCategory->save();
+            } else {
+                $difference = $validated['quantity'] - $oldQuantity;
+                $category = TicketCategory::find($validated['ticket_category_id']);
+                $category->sold_quantity += $difference;
+                $category->save();
+            }
+
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket booking updated successfully.',
+                'message' => 'Ticket updated successfully',
                 'data' => $ticket
             ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Ticket booking not found.',
-            ], 404);
         } catch (ValidationException $e) {
-            // Catches validation errors from $request->validate()
-            // Returns all validation errors, which is standard for APIs
-            return response()->json([
-                'status' => false,
-                'message' => $e->validator->errors()->first(),
-            ], 422);
+            return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to update ticket booking due to an unexpected server error. Please try again later.',
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to update ticket', 'error' => $e->getMessage()], 500);
         }
     }
+
 
     public function destroy($id)
     {
