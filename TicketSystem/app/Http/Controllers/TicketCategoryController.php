@@ -123,13 +123,13 @@ class TicketCategoryController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'event_id' => 'required|exists:events,id',
-            'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'event_id' => 'sometimes|exists:events,id',
+            'name' => 'sometimes|string|max:255',
+            'price' => 'sometimes|numeric|min:0',
             'sales_start' => 'nullable|date',
             'sales_end' => 'nullable|date|after_or_equal:sales_start',
-            'total_quantity' => 'required|integer|min:0',
-            'sold_quantity' => 'required|integer|min:0',
+            'total_quantity' => 'sometimes|integer|min:0',
+            'sold_quantity' => 'sometimes|integer|min:0',
         ]);
 
         if ($validator->fails()) {

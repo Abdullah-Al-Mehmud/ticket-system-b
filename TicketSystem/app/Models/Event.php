@@ -27,7 +27,7 @@ class Event extends Model
 
     public function ticketCategories()
     {
-        return $this->hasMany(TicketCategory::class);
+        return $this->hasMany(TicketCategory::class)->orderBy('id', 'desc');
     }
 
     public function tickets()
