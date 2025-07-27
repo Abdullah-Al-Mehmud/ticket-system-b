@@ -18,8 +18,8 @@ class TicketController extends Controller
         try {
             $count = $request->query('count');
             $tickets = $count
-                ? Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->paginate($count)
-                : Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->get();
+                ? Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->orderBy('id', 'desc')->paginate($count)
+                : Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->orderBy('id', 'desc')->get();
 
             return response()->json([
                 'status' => true,

@@ -12,7 +12,7 @@ class TicketCategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = TicketCategory::with(['event']);
+            $query = TicketCategory::with(['event'])->orderBy('id', 'desc');
 
 
             if ($request->filled('search')) {
