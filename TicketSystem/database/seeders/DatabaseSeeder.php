@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             EventSeeder::class,
             RolePermissionSeeder::class,
             TicketCategorySeeder::class,
-            TicketSeeder::class,
+            // TicketSeeder::class,
         ]);
     }
 }
