@@ -12,7 +12,7 @@ class TicketCategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = TicketCategory::with(['event']);
+            $query = TicketCategory::with(['event'])->orderBy('id', 'desc');
 
 
             if ($request->filled('search')) {
@@ -92,13 +92,33 @@ class TicketCategoryController extends Controller
     }
 
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+
+    public function show($id)
     {
-        //
+        try {
+            $category = TicketCategory::with('event','tickets')->find($id);
+
+            if (!$category) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket category not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket category retrieved successfully',
+                'data' => $category,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve ticket category.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server Error',
+            ], 500);
+        }
     }
+
 
     public function update(Request $request, $id)
     {

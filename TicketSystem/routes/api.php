@@ -80,6 +80,7 @@ Route::middleware(['auth:api'])->group(function () {
 
     //Ticket Category CRUD
     Route::get('/ticket-category', [TicketCategoryController::class, 'index']);
+    Route::get('/ticket-category/{id}', [TicketCategoryController::class, 'show']);
     Route::post('/ticket-category', [TicketCategoryController::class, 'store']);
     Route::patch('/ticket-category/{id}', [TicketCategoryController::class, 'update']);
     Route::delete('/ticket-category/{id}', [TicketCategoryController::class, 'destroy']);
