@@ -2,16 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Event;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
+
 
 class TicketSeeder extends Seeder
 {
@@ -31,17 +27,13 @@ class TicketSeeder extends Seeder
         foreach (range(1, 30) as $i) {
             $quantity = rand(1, 5);
 
-            // unit_price could come from related TicketCategory price or random here
-            // To keep simple, random price between 100 and 1000
-            $unitPrice = rand(100, 1000);
-
             $statuses = ["Confirmed", "Cancelled", "Refunded"];
 
             Ticket::create([
                 'user_id' => $userIds->random(),
                 'ticket_category_id' => $categoryIds->random(),
                 'quantity' => $quantity,
-                'unit_price' => $unitPrice,
+                // Removed 'unit_price' as per your provided table schema
                 'status' => $statuses[array_rand($statuses)],
             ]);
         }

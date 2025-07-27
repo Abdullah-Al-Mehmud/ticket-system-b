@@ -43,9 +43,9 @@ Route::middleware(['auth:api'])->group(function () {
     Route::delete('/users/{id}', [AdminController::class, 'destroy'])->middleware('permission:manage users admin');
 
     // Ticket Manage
-    Route::get('/ticket', [TicketController::class, 'index'])->middleware('permission:manage tickets admin');
-    Route::patch('/ticket/{id}', [TicketController::class, 'update'])->middleware('permission:manage tickets admin');
-    Route::delete('/ticket/{id}', [TicketController::class, 'destroy'])->middleware('permission:manage tickets admin');
+    Route::get('/ticket', [TicketController::class, 'index']);
+    Route::patch('/ticket/{id}', [TicketController::class, 'update']);
+    Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
 
     // Category Manage
     Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:create categories admin');

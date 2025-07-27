@@ -10,7 +10,6 @@ class Ticket extends Model
         'user_id',
         'ticket_category_id',
         'quantity',
-        'unit_price',
         'status',
     ];
 
@@ -21,7 +20,7 @@ class Ticket extends Model
 
     public function ticketCategory()
     {
-        return $this->belongsTo(TicketCategory::class, 'ticket_categories_id');
+        return $this->belongsTo(TicketCategory::class, );
     }
 
     public function event()
