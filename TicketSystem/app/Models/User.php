@@ -73,8 +73,8 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Ticket::class);
     }
 
-    // public function getRoleNameAttribute()
-    // {
-    //     return $this->getRoleNames()->first(); 
-    // }
+    public function organizedEvents()
+    {
+        return $this->belongsToMany(Event::class, 'event_organizers');
+    }
 }
