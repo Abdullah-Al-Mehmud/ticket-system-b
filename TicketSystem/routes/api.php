@@ -69,6 +69,8 @@ Route::middleware(['auth:api'])->group(function () {
     Route::patch('/event/{id}', [EventController::class, 'update'])->middleware('permission:edit events organizer');
     Route::delete('/event/{id}', [EventController::class, 'destroy'])->middleware('permission:delete events organizer');
 
+    Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
+
 
     // ✅ User Permissions
 

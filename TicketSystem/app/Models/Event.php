@@ -24,6 +24,11 @@ class Event extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    public function organizerPivots()
+    {
+        return $this->hasMany(EventOrganizer::class);
+    }
+
     public function organizers()
     {
         return $this->belongsToMany(User::class, 'event_organizers');

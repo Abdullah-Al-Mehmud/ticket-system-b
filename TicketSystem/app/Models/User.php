@@ -68,13 +68,20 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Event::class, 'created_by');
     }
-    public function tickets()
-    {
-        return $this->hasMany(Ticket::class);
-    }
 
     public function organizedEvents()
     {
         return $this->belongsToMany(Event::class, 'event_organizers');
+    }
+
+    public function organizerPivots()
+    {
+        return $this->hasMany(EventOrganizer::class);
+    }
+
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
     }
 }
