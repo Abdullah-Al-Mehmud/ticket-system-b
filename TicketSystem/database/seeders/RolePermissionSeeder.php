@@ -13,37 +13,36 @@ class RolePermissionSeeder extends Seeder
      */
     public function run()
     {
-        // All Permissions
+        // All Permissions (admin and user only)
         $permissions = [
+            // Admin event permissions
             'create events admin',
             'edit events admin',
             'delete events admin',
             'view events admin',
 
-            'create events organizer',
-            'edit events organizer',
-            'delete events organizer',
-            'view events organizer',
-
+            // Admin category permissions
             'create categories admin',
             'edit categories admin',
             'delete categories admin',
             'view categories admin',
 
+            // Admin user/ticket management
             'manage users admin',
             'manage tickets admin',
 
+            // Admin dashboard
+            'view admin dashboard',
+
+            // User permissions
             'create ticket user',
             'view ticket user',
+            'view user dashboard',
 
-            'view admin dashboard',
-            'view organizer dashboard',
-            'view_user_dashboard',
-
+            // Shared/view permissions
             'view events',
             'view categories',
         ];
-
 
         // Create all permissions
         foreach ($permissions as $permission) {
@@ -57,22 +56,12 @@ class RolePermissionSeeder extends Seeder
         $rolesPermissions = [
             'admin' => $permissions, // Admin gets all
 
-            'organizer' => [
-                'create events organizer',
-                'edit events organizer',
-                'view organizer dashboard',
-                'delete events organizer',
-                'view events organizer',
-                'view categories',
-            ],
-
             'user' => [
                 'view events',
                 'view categories',
                 'view user dashboard',
                 'create ticket user',
                 'view ticket user',
-                'view_user_dashboard',
             ],
         ];
 

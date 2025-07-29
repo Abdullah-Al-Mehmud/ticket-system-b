@@ -15,56 +15,48 @@ class TicketSeeder extends Seeder
      */
     public function run(): void
     {
-        $userIds = User::pluck('id');
+        $userIds = User::whereHas('roles', function ($q) {
+            $q->where('name', 'user');
+        })->pluck('id');
+
         $categoryIds = TicketCategory::pluck('id');
 
         if ($userIds->isEmpty() || $categoryIds->isEmpty()) {
-            $this->command->warn('⚠️ Users or Ticket Categories missing. Please seed users and ticket categories first.');
+            $this->command->warn('Users or Ticket Categories missing. Please seed users and ticket categories first.');
             return;
         }
 
-        foreach (range(1, 30) as $i) {
+        $statuses = ['Confirmed', 'Cancelled', 'Refunded'];
+
+        foreach (range(1, 50) as $i) {
             DB::beginTransaction();
 
             try {
-                $quantity = rand(1, 5);
-                $status = collect(["Confirmed", "Cancelled", "Refunded"])->random();
-                $categoryId = $categoryIds->random();
                 $userId = $userIds->random();
+                $categoryId = $categoryIds->random();
+                $quantity = fake()->numberBetween(1, 4);
+                $status = collect($statuses)->random();
 
-                // Check if a ticket already exists for same user, category, and status
-                $existingTicket = Ticket::where('user_id', $userId)
-                    ->where('ticket_category_id', $categoryId)
-                    ->where('status', $status)
-                    ->first();
+                Ticket::create([
+                    'user_id'            => $userId,
+                    'ticket_category_id' => $categoryId,
+                    'quantity'           => $quantity,
+                    'status'             => $status,
+                ]);
 
-                if ($existingTicket) {
-                    // Update the quantity of the existing ticket
-                    $existingTicket->quantity += $quantity;
-                    $existingTicket->save();
-                    $ticket = $existingTicket;
-                } else {
-                    // Create new ticket
-                    $ticket = Ticket::create([
-                        'user_id' => $userId,
-                        'ticket_category_id' => $categoryId,
-                        'quantity' => $quantity,
-                        'status' => $status,
-                    ]);
-                }
-
-                // Update sold_quantity if status is Confirmed
+                // Only update sold_quantity for confirmed tickets
                 if ($status === 'Confirmed') {
-                    TicketCategory::where('id', $categoryId)->increment('sold_quantity', $quantity);
+                    TicketCategory::where('id', $categoryId)
+                        ->increment('sold_quantity', $quantity);
                 }
 
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
-                $this->command->error("❌ Failed to create/update ticket on iteration {$i}: " . $e->getMessage());
+                $this->command->error("Failed to create ticket on iteration {$i}: " . $e->getMessage());
             }
         }
 
-        $this->command->info('✅ Tickets seeded successfully (avoided duplicates, updated quantity, and sold_quantity).');
+        $this->command->info('50 tickets seeded successfully using real-style data (no duplicates, no updates).');
     }
 }

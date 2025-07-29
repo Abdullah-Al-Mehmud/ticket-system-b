@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use App\Models\Event;
 use App\Models\TicketCategory;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class TicketCategorySeeder extends Seeder
 {
@@ -19,21 +17,41 @@ class TicketCategorySeeder extends Seeder
         $events = Event::all();
 
         if ($events->isEmpty()) {
-            $this->command->warn('⚠️ No events found. Please run EventSeeder first.');
+            $this->command->warn('No events found. Please run EventSeeder first.');
             return;
         }
 
+        // Realistic ticket category names with common pricing tiers
+        $ticketTypes = [
+            ['name' => 'General Admission', 'price' => 200],
+            ['name' => 'VIP Pass', 'price' => 500],
+            ['name' => 'Early Bird', 'price' => 150],
+            ['name' => 'Student Pass', 'price' => 100],
+            ['name' => 'Group Package', 'price' => 800],
+            ['name' => 'Premium Seat', 'price' => 700],
+            ['name' => 'Backstage Access', 'price' => 1200],
+        ];
+
         foreach ($events as $event) {
-            $numCategories = rand(1, 3); 
+            $numCategories = rand(1, 3);
+            $usedIndexes = [];
 
             for ($i = 1; $i <= $numCategories; $i++) {
-                $salesStart = Carbon::parse($event->start_date)->subDays(rand(3, 10));
-                $salesEnd = Carbon::parse($event->start_date)->subDays(rand(0, 2));
+                // Ensure no duplicate ticket names for the same event
+                do {
+                    $index = array_rand($ticketTypes);
+                } while (in_array($index, $usedIndexes));
+                $usedIndexes[] = $index;
+
+                $ticketType = $ticketTypes[$index];
+
+                $salesStart = Carbon::parse($event->start_date)->subDays(rand(5, 15));
+                $salesEnd = Carbon::parse($event->start_date)->subDays(rand(1, 3));
 
                 TicketCategory::create([
                     'event_id'       => $event->id,
-                    'name'           => 'Ticket ' . strtoupper(Str::random(4)),
-                    'price'          => rand(100, 1000),
+                    'name'           => $ticketType['name'],
+                    'price'          => $ticketType['price'],
                     'sales_start'    => $salesStart,
                     'sales_end'      => $salesEnd->greaterThan($salesStart) ? $salesEnd : $salesStart->copy()->addDays(2),
                     'total_quantity' => rand(50, 300),
@@ -42,6 +60,6 @@ class TicketCategorySeeder extends Seeder
             }
         }
 
-        $this->command->info('✅ Ticket categories seeded successfully for all events.');
+        $this->command->info('Ticket categories seeded successfully with real data.');
     }
 }

@@ -15,28 +15,24 @@ Route::get('/profile', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// ✅ Auth Routes
+// Auth Routes
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// ✅ Public Event Routes
+// Public Event Routes
 Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
 
-// ✅ Protected Routes
+// Protected Routes
 Route::middleware(['auth:api'])->group(function () {
-
-    // ✅ Admin Only Permissions
-
+    //Admin Only Permissions
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])
         ->middleware('permission:view admin dashboard');
 
     // User Manage
-    Route::get('/user', [AdminController::class, 'index'])->middleware('permission:manage users admin');
-
-
-    Route::get('/user/dashboard', [UserController::class, 'dashboard'])->middleware('permission:view_user_dashboard');
+    Route::get('/user', [AdminController::class, 'index']);
+    Route::get('/user/dashboard', [UserController::class, 'dashboard']);
     Route::get('/user/{id}', [AdminController::class, 'show']);
     Route::post('/users', [AdminController::class, 'store']);
     Route::patch('/users/{id}', [AdminController::class, 'update']);
@@ -44,41 +40,28 @@ Route::middleware(['auth:api'])->group(function () {
 
     // Ticket Manage
     Route::get('/ticket', [TicketController::class, 'index']);
+    Route::get('/tickets', [TicketController::class, 'myTickets']);
+    Route::get('/ticket/{id}', [TicketController::class, 'show']);
+    Route::post('/ticket', [TicketController::class, 'store']);
     Route::patch('/ticket/{id}', [TicketController::class, 'update']);
     Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
 
     // Category Manage
-    Route::post('/categories', [CategoryController::class, 'store'])->middleware('permission:create categories admin');
-    Route::patch('/categories/{id}', [CategoryController::class, 'update'])->middleware('permission:edit categories admin');
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->middleware('permission:delete categories admin');
-
     Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/categories/{id}', [CategoryController::class, 'show'])->middleware('permission:delete categories admin');
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::patch('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-    // Route::get('/event', [EventController::class, 'index'])->middleware('permission:view events admin');
+    // Organizer Permissions
+    Route::get('organizer/dashboard', [OrganizerController::class, 'dashboard']);
 
-
-    // ✅ Organizer Permissions
-
-    Route::get('organizer/dashboard', [OrganizerController::class, 'dashboard'])
-        ->middleware('permission:view organizer dashboard');
-
-
-    Route::post('/event', [EventController::class, 'store']);
+    //Event Manage
     Route::get('/organizer-event', [EventController::class, 'myEvent']);
+    Route::post('/event', [EventController::class, 'store']);
+    Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
     Route::patch('/event/{id}', [EventController::class, 'update']);
     Route::delete('/event/{id}', [EventController::class, 'destroy']);
-
-    Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
-
-
-    // ✅ User Permissions
-
-
-
-    Route::post('/ticket', [TicketController::class, 'store'])->middleware('permission:create ticket user');
-    Route::get('/tickets', [TicketController::class, 'myTickets'])->middleware('permission:view ticket user');
-    Route::get('/ticket/{id}', [TicketController::class, 'show']);
 
     //Ticket Category CRUD
     Route::get('/ticket-category', [TicketCategoryController::class, 'index']);
