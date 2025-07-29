@@ -19,7 +19,7 @@ class AdminController extends Controller
         try {
             $totalUsers = User::count();
             $totalAdmins = User::role('admin')->count();
-            $totalOrganizers = User::role('organizer')->count();
+            $totalOrganizers = 0;
             $totalCustomers = User::role('user')->count();
 
             $totalEvents = Event::count();
