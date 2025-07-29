@@ -37,10 +37,10 @@ Route::middleware(['auth:api'])->group(function () {
 
 
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->middleware('permission:view_user_dashboard');
-    Route::get('/user/{id}', [AdminController::class, 'show'])->middleware('permission:manage users admin');
-    Route::post('/users', [AdminController::class, 'store'])->middleware('permission:manage users admin');
-    Route::patch('/users/{id}', [AdminController::class, 'update'])->middleware('permission:manage users admin');
-    Route::delete('/users/{id}', [AdminController::class, 'destroy'])->middleware('permission:manage users admin');
+    Route::get('/user/{id}', [AdminController::class, 'show']);
+    Route::post('/users', [AdminController::class, 'store']);
+    Route::patch('/users/{id}', [AdminController::class, 'update']);
+    Route::delete('/users/{id}', [AdminController::class, 'destroy']);
 
     // Ticket Manage
     Route::get('/ticket', [TicketController::class, 'index']);
@@ -64,10 +64,10 @@ Route::middleware(['auth:api'])->group(function () {
         ->middleware('permission:view organizer dashboard');
 
 
-    Route::post('/event', [EventController::class, 'store'])->middleware('permission:create events organizer');
-    Route::get('/organizer-event', [EventController::class, 'myEvent'])->middleware('permission:view events organizer');
-    Route::patch('/event/{id}', [EventController::class, 'update'])->middleware('permission:edit events organizer');
-    Route::delete('/event/{id}', [EventController::class, 'destroy'])->middleware('permission:delete events organizer');
+    Route::post('/event', [EventController::class, 'store']);
+    Route::get('/organizer-event', [EventController::class, 'myEvent']);
+    Route::patch('/event/{id}', [EventController::class, 'update']);
+    Route::delete('/event/{id}', [EventController::class, 'destroy']);
 
     Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
 

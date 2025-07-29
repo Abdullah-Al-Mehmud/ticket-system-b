@@ -15,7 +15,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Event::with('category', 'organizers','creator');
+            $query = Event::with('category', 'organizers', 'creator');
 
             if ($request->filled('search')) {
                 $query->where('title', 'like', '%' . $request->search . '%');
@@ -140,7 +140,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = Event::with(['organizers','creator', 'category', 'ticketCategories'])->find($id);
+            $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories'])->find($id);
 
             if (!$event) {
                 return response()->json([
@@ -270,17 +270,20 @@ class EventController extends Controller
                 ], 401);
             }
 
-            $query = Event::with('category')->where('created_by', $userId);
-            $query->orderBy('created_at', 'desc');
-
-            $page = (int) $request->get('page', 1);
             $perPage = (int) $request->get('count', 10);
+            $page = (int) $request->get('page', 1);
 
-            $events = $query->paginate($perPage, ['*'], 'page', $page);
+            // Only those events where user is an organizer
+            $events = Event::with(['category', 'organizers'])
+                ->whereHas('organizers', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Your events retrieved successfully',
+                'message' => 'Your organized events retrieved successfully',
                 'data' => $events->items(),
                 'total' => $events->total(),
                 'current_page' => $events->currentPage(),
@@ -289,11 +292,12 @@ class EventController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve your events. An unexpected error occurred.',
+                'message' => 'Failed to retrieve your organized events. An unexpected error occurred.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     public function assignOrganizers(Request $request)
     {
