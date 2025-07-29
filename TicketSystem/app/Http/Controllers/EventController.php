@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\EventOrganizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
@@ -13,7 +15,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Event::with('category','organizer');
+            $query = Event::with('category', 'organizer');
 
             if ($request->filled('search')) {
                 $query->where('title', 'like', '%' . $request->search . '%');
@@ -289,6 +291,74 @@ class EventController extends Controller
                 'status' => false,
                 'message' => 'Failed to retrieve your events. An unexpected error occurred.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function assignOrganizers(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'event_id' => 'required|integer|exists:events,id',
+                'user_id' => 'required|integer|exists:users,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Validation failed.',
+                    'errors' => $validator->errors()->first(),
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+
+            $eventId = $validated['event_id'];
+            $userId = $validated['user_id'];
+
+            $event = Event::find($eventId);
+            if (!$event) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Event not found.',
+                ], 404);
+            }
+
+            $alreadyExists = EventOrganizer::where('event_id', $eventId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if ($alreadyExists) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'User is already an organizer for this event.',
+                ], 200);
+            }
+
+            EventOrganizer::create([
+                'event_id' => $eventId,
+                'user_id' => $userId,
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Organizer assigned successfully.',
+                'data' => [
+                    'event_id' => $eventId,
+                    'user_id' => $userId,
+                ],
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
