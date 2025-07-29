@@ -86,26 +86,56 @@ class TicketController extends Controller
     public function show($id)
     {
         try {
-            $ticket = Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->findOrFail($id);
+            $ticket = Ticket::with([
+                'ticketCategory:id,event_id,name,price',
+                'ticketCategory.event:id,title,location,start_date,end_date,category_id',
+                'ticketCategory.event.category:id,name'
+            ])->findOrFail($id);
+
+            $event = $ticket->ticketCategory?->event;
+
+            $ticketPrice = $ticket->ticketCategory?->price;
+
+            $response = [
+                'ticket_id' => $ticket->id,
+                'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                'quantity' => $ticket->quantity,
+                'status' => $ticket->status,
+                'event' => [
+                    'title' => $event?->title,
+                    'location' => $event?->location,
+                    'start_date' => $event?->start_date,
+                    'end_date' => $event?->end_date,
+                    'category' => [
+                        'name' => $event?->category?->name
+                    ],
+                ],
+                'price_per_ticket' => number_format($ticketPrice, 2),
+                'total_price' => number_format($ticketPrice * $ticket->quantity, 2),
+            ];
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket retrieved successfully.',
-                'data' => $ticket
+                'message' => 'Ticket data retrieved successfully.',
+                'data' => $response
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Ticket not found.',
+                'message' => 'Ticket not found.'
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve ticket due to a server error.',
+                'message' => 'Something went wrong.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
+
+
+
 
 
 

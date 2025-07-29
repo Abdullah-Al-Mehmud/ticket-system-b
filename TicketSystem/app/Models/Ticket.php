@@ -20,7 +20,7 @@ class Ticket extends Model
 
     public function ticketCategory()
     {
-        return $this->belongsTo(TicketCategory::class, );
+        return $this->belongsTo(TicketCategory::class);
     }
 
     public function event()
