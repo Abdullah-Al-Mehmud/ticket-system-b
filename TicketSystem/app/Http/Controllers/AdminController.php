@@ -259,40 +259,43 @@ class AdminController extends Controller
 
             // Validate incoming data
             $validated = $request->validate([
-                'name'     => 'required|string|max:255',
-                'email'    => 'required|string|email|unique:users,email,' . $user->id,
-                'role'     => 'required|in:user,organizer,admin',
-                'password' => 'nullable|string|min:6|confirmed',
+                'name'     => 'sometimes|string|max:255',
+                'email'    => 'sometimes|string|email|unique:users,email,' . $user->id,
+                'role'     => 'sometimes|in:user,admin',
+                'password' => 'sometimes|string|min:6|confirmed',
             ]);
 
-            // Update user fields
-            $user->name = $validated['name'];
-            $user->email = $validated['email'];
+            $updatedFields = [];
+
+            if (isset($validated['name'])) {
+                $user->name = $validated['name'];
+                $updatedFields['name'] = $user->name;
+            }
+
+            if (isset($validated['email'])) {
+                $user->email = $validated['email'];
+                $updatedFields['email'] = $user->email;
+            }
 
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
+                $updatedFields['password'] = '********'; // Never return raw password
             }
 
             $user->save();
 
-            // Check if the role exists, if not create it
-            $role = Role::firstOrCreate(
-                ['name' => $validated['role'], 'guard_name' => 'api']
-            );
-
-            // Remove old roles and assign new role
-            $user->syncRoles([$role]);
+            if (isset($validated['role'])) {
+                $role = Role::firstOrCreate(
+                    ['name' => $validated['role'], 'guard_name' => 'api']
+                );
+                $user->syncRoles([$role]);
+                $updatedFields['role'] = $role->name;
+            }
 
             return response()->json([
                 'status'  => true,
                 'message' => 'User updated successfully',
-                'data'    => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'created_at' => $user->created_at,
-                    'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
-                ]
+                'updated_fields' => $updatedFields
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -308,6 +311,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
+
 
 
     // user delete
