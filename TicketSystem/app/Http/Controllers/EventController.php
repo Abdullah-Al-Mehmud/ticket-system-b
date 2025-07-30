@@ -7,6 +7,7 @@ use App\Models\EventOrganizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
@@ -63,12 +64,6 @@ class EventController extends Controller
         }
     }
 
-
-
-
-
-
-
     public function store(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -80,7 +75,7 @@ class EventController extends Controller
             'start_date'        => 'required|date',
             'end_date'          => 'required|date|after_or_equal:start_date',
             'privacy_policy'    => 'required|string',
-            'image_url'         => 'nullable|url',
+            'image_url'             => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
             'status'            => 'nullable|in:Upcoming,Live,Done,Cancelled',
             'category_id'       => 'required|exists:categories,id',
             'created_by'        => 'sometimes|exists:users,id',
@@ -107,6 +102,14 @@ class EventController extends Controller
                     'message' => 'You are not allowed to set created_by.'
                 ], 403);
             }
+            // Image Upload
+            $imageUrl = null;
+            if ($request->hasFile('image_url')) {
+                $image = $request->file('image_url');
+                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('uploads/events', $filename, 'public');
+                $imageUrl = 'storage/' . $path;
+            }
 
             $event = Event::create([
                 'created_by'        => $createdBy,
@@ -117,7 +120,7 @@ class EventController extends Controller
                 'start_date'        => $request->start_date,
                 'end_date'          => $request->end_date,
                 'privacy_policy'    => $request->privacy_policy,
-                'image_url'         => $request->image_url,
+                'image_url'         => $imageUrl,
                 'status'            => $request->status ?? 'Upcoming',
             ]);
 
