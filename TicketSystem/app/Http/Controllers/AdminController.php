@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -257,12 +259,12 @@ class AdminController extends Controller
                 ], 404);
             }
 
-            // Validate incoming data
             $validated = $request->validate([
                 'name'     => 'sometimes|string|max:255',
                 'email'    => 'sometimes|string|email|unique:users,email,' . $user->id,
                 'role'     => 'sometimes|in:user,admin',
                 'password' => 'sometimes|string|min:6|confirmed',
+                'image_url' => 'sometimes|nullable|image|mimes:jpg,jpeg,png',
             ]);
 
             $updatedFields = [];
@@ -279,7 +281,20 @@ class AdminController extends Controller
 
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
-                $updatedFields['password'] = '********'; // Never return raw password
+                $updatedFields['password'] = '********';
+            }
+            if ($request->hasFile('image_url')) {
+                if ($user->image_url && Storage::disk('public')->exists(str_replace('storage/', '', $user->image_url))) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $user->image_url));
+                }
+
+
+                $image = $request->file('image_url');
+                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('uploads/users', $filename, 'public');
+
+                $user->image_url = 'storage/' . $path;
+                $updatedFields['image_url'] = $user->image_url;
             }
 
             $user->save();
@@ -314,7 +329,6 @@ class AdminController extends Controller
 
 
 
-    // user delete
     public function destroy($id)
     {
         $user = User::find($id);
@@ -326,15 +340,26 @@ class AdminController extends Controller
             ], 404);
         }
 
-        // Step 1: Remove assigned roles (detach from pivot table)
-        $user->roles()->detach(); // or use $user->syncRoles([])
+        try {
+            $user->roles()->detach();
+
+            if ($user->image_url && Storage::disk('public')->exists(str_replace('storage/', '', $user->image_url))) {
+                Storage::disk('public')->delete(str_replace('storage/', '', $user->image_url));
+            }
 
 
-        $user->delete();
+            $user->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'User deleted successfully'
-        ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'User deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
