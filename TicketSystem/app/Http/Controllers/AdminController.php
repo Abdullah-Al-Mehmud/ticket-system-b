@@ -184,6 +184,7 @@ class AdminController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'image_url' => $user->image_url,
                 'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
             ]
         ]);
