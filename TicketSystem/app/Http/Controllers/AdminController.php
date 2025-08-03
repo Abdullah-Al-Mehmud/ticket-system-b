@@ -82,88 +82,66 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         try {
-            $page = $request->query('page', 1);
-            $perPage = $request->query('count', 10);
+            $page = (int) $request->query('page', 1);
+            $perPage = (int) $request->query('count', 10);
+            $role = $request->query('role');
+            $searchTerm = $request->query('search');
+            $getAll = filter_var($request->query('all'), FILTER_VALIDATE_BOOLEAN);
 
             $query = User::with('roles')->latest();
 
-            if ($request->has('role')) {
-                $role = $request->input('role');
-                $query->whereHas('roles', function ($q) use ($role) {
-                    $q->where('name', $role);
-                });
+            if ($role) {
+                $query->whereHas('roles', fn($q) => $q->where('name', $role));
             }
 
-            if ($request->has('search')) {
-                $searchTerm = $request->input('search');
+            if ($searchTerm) {
                 $query->where('name', 'like', '%' . $searchTerm . '%');
             }
 
+            $transformUser = function ($user) {
+                $userArray = $user->toArray();
+                $role = $userArray['roles'][0] ?? null;
 
-            if (!$request->has('role') && !$request->has('search')) {
+                $userArray['role'] = $role
+                    ? ['id' => $role['id'], 'name' => $role['name']]
+                    : null;
+
+                unset($userArray['roles']);
+                return $userArray;
+            };
+
+            if ($getAll) {
                 $users = $query->get();
-
-                $count = $users->count();
-
-                $formattedUsers = $users->map(function ($user) {
-                    $userArray = $user->toArray();
-
-                    if (!empty($userArray['roles'])) {
-                        $userArray['role'] = [
-                            'id' => $userArray['roles'][0]['id'] ?? null,
-                            'name' => $userArray['roles'][0]['name'] ?? null,
-                        ];
-                    } else {
-                        $userArray['role'] = null;
-                    }
-
-                    unset($userArray['roles']);
-
-                    return $userArray;
-                });
+                $formattedUsers = $users->map($transformUser);
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Users fetched successfully (without pagination).',
+                    'message' => 'All users fetched successfully.',
                     'data' => $formattedUsers,
-                    'total_users' => $count,
+                    'total_users' => $formattedUsers->count(),
                 ], 200);
             }
 
-            $usersPaginator = $query->paginate($perPage, ['*'], 'page', $page);
-
-            $usersPaginator->getCollection()->transform(function ($user) {
-                $userArray = $user->toArray();
-
-                if (!empty($userArray['roles'])) {
-                    $userArray['role'] = [
-                        'id' => $userArray['roles'][0]['id'] ?? null,
-                        'name' => $userArray['roles'][0]['name'] ?? null,
-                    ];
-                } else {
-                    $userArray['role'] = null;
-                }
-
-                unset($userArray['roles']);
-
-                return $userArray;
-            });
+            $users = $query->paginate($perPage, ['*'], 'page', $page);
+            $users->getCollection()->transform($transformUser);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Users fetched successfully (with pagination).',
-                'data' => $usersPaginator->items(),
-                'total_users' => $usersPaginator->total(),
-
+                'data' => $users->items(),
+                'total_users' => $users->total(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch users.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
 
 
