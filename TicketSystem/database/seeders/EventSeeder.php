@@ -76,7 +76,7 @@ class EventSeeder extends Seeder
                 'start_date'        => Carbon::now()->addDays($index + 1),
                 'end_date'          => Carbon::now()->addDays($index + 1)->addHours(4),
                 'privacy_policy'    => 'All tickets are non-refundable unless the event is cancelled.',
-                'image_url'         => fake()->randomElement($bannerImages),
+                // 'image_url'         => fake()->randomElement($bannerImages),
                 'status'            => fake()->randomElement($statusOptions),
             ]);
         }

@@ -30,6 +30,10 @@ class EventController extends Controller
             if ($request->filled('date')) {
                 $query->whereDate('created_at', $request->date);
             }
+            if ($request->filled('category')) {
+                $query->where('category_id', $request->category);
+            }
+
 
             $query->orderBy('id', 'desc');
 
