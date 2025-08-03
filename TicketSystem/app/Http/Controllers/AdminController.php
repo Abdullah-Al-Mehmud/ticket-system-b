@@ -9,6 +9,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
@@ -80,88 +82,66 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         try {
-            $page = $request->query('page', 1);
-            $perPage = $request->query('count', 10);
+            $page = (int) $request->query('page', 1);
+            $perPage = (int) $request->query('count', 10);
+            $role = $request->query('role');
+            $searchTerm = $request->query('search');
+            $getAll = filter_var($request->query('all'), FILTER_VALIDATE_BOOLEAN);
 
             $query = User::with('roles')->latest();
 
-            if ($request->has('role')) {
-                $role = $request->input('role');
-                $query->whereHas('roles', function ($q) use ($role) {
-                    $q->where('name', $role);
-                });
+            if ($role) {
+                $query->whereHas('roles', fn($q) => $q->where('name', $role));
             }
 
-            if ($request->has('search')) {
-                $searchTerm = $request->input('search');
+            if ($searchTerm) {
                 $query->where('name', 'like', '%' . $searchTerm . '%');
             }
 
+            $transformUser = function ($user) {
+                $userArray = $user->toArray();
+                $role = $userArray['roles'][0] ?? null;
 
-            if (!$request->has('role') && !$request->has('search')) {
+                $userArray['role'] = $role
+                    ? ['id' => $role['id'], 'name' => $role['name']]
+                    : null;
+
+                unset($userArray['roles']);
+                return $userArray;
+            };
+
+            if ($getAll) {
                 $users = $query->get();
-
-                $count = $users->count();
-
-                $formattedUsers = $users->map(function ($user) {
-                    $userArray = $user->toArray();
-
-                    if (!empty($userArray['roles'])) {
-                        $userArray['role'] = [
-                            'id' => $userArray['roles'][0]['id'] ?? null,
-                            'name' => $userArray['roles'][0]['name'] ?? null,
-                        ];
-                    } else {
-                        $userArray['role'] = null;
-                    }
-
-                    unset($userArray['roles']);
-
-                    return $userArray;
-                });
+                $formattedUsers = $users->map($transformUser);
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Users fetched successfully (without pagination).',
+                    'message' => 'All users fetched successfully.',
                     'data' => $formattedUsers,
-                    'total_users' => $count,
+                    'total_users' => $formattedUsers->count(),
                 ], 200);
             }
 
-            $usersPaginator = $query->paginate($perPage, ['*'], 'page', $page);
-
-            $usersPaginator->getCollection()->transform(function ($user) {
-                $userArray = $user->toArray();
-
-                if (!empty($userArray['roles'])) {
-                    $userArray['role'] = [
-                        'id' => $userArray['roles'][0]['id'] ?? null,
-                        'name' => $userArray['roles'][0]['name'] ?? null,
-                    ];
-                } else {
-                    $userArray['role'] = null;
-                }
-
-                unset($userArray['roles']);
-
-                return $userArray;
-            });
+            $users = $query->paginate($perPage, ['*'], 'page', $page);
+            $users->getCollection()->transform($transformUser);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Users fetched successfully (with pagination).',
-                'data' => $usersPaginator->items(),
-                'total_users' => $usersPaginator->total(),
-
+                'data' => $users->items(),
+                'total_users' => $users->total(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to fetch users.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
 
 
@@ -182,6 +162,7 @@ class AdminController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'image_url' => $user->image_url,
                 'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
             ]
         ]);
@@ -257,12 +238,12 @@ class AdminController extends Controller
                 ], 404);
             }
 
-            // Validate incoming data
             $validated = $request->validate([
                 'name'     => 'sometimes|string|max:255',
                 'email'    => 'sometimes|string|email|unique:users,email,' . $user->id,
                 'role'     => 'sometimes|in:user,admin',
                 'password' => 'sometimes|string|min:6|confirmed',
+                'image_url' => 'sometimes|nullable|image|mimes:jpg,jpeg,png',
             ]);
 
             $updatedFields = [];
@@ -279,7 +260,20 @@ class AdminController extends Controller
 
             if (!empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
-                $updatedFields['password'] = '********'; // Never return raw password
+                $updatedFields['password'] = '********';
+            }
+            if ($request->hasFile('image_url')) {
+                if ($user->image_url && Storage::disk('public')->exists(str_replace('storage/', '', $user->image_url))) {
+                    Storage::disk('public')->delete(str_replace('storage/', '', $user->image_url));
+                }
+
+
+                $image = $request->file('image_url');
+                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $path = $image->storeAs('uploads/users', $filename, 'public');
+
+                $user->image_url = 'storage/' . $path;
+                $updatedFields['image_url'] = $user->image_url;
             }
 
             $user->save();
@@ -314,7 +308,6 @@ class AdminController extends Controller
 
 
 
-    // user delete
     public function destroy($id)
     {
         $user = User::find($id);
@@ -326,15 +319,26 @@ class AdminController extends Controller
             ], 404);
         }
 
-        // Step 1: Remove assigned roles (detach from pivot table)
-        $user->roles()->detach(); // or use $user->syncRoles([])
+        try {
+            $user->roles()->detach();
+
+            if ($user->image_url && Storage::disk('public')->exists(str_replace('storage/', '', $user->image_url))) {
+                Storage::disk('public')->delete(str_replace('storage/', '', $user->image_url));
+            }
 
 
-        $user->delete();
+            $user->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'User deleted successfully'
-        ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'User deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to delete user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
