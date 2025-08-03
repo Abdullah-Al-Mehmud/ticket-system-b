@@ -9,36 +9,48 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         try {
             $getAll = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
+            $status = $request->query('status');
+            $name = $request->query('search');
+            $query = Category::query();
+
+            if (!is_null($status)) {
+                $query->where('status', $status);
+            }
+
+            if (!is_null($name)) {
+                // Simple LIKE search for name (case-insensitive)
+                $query->where('name', 'LIKE', '%' . $name . '%');
+            }
+
+            $query->orderBy('id', 'desc');
 
             if ($getAll) {
-                $categories = Category::latest()->get();
+                $categories = $query->get();
+
                 return response()->json([
                     'status' => true,
                     'message' => 'All categories retrieved successfully',
                     'data' => $categories,
-                    'total_categories' => $categories->count()
-                ]);
-            } else {
-                // Continue with pagination
-                $page = $request->query('page', 1);
-                $perPage = $request->query('count', 10);
-
-                $categories = Category::latest()->paginate($perPage, ['*'], 'page', $page);
-
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Categories retrieved successfully',
-                    'data' => $categories->items(),
-                    'total_categories' => $categories->total()
+                    'total_categories' => $categories->count(),
                 ]);
             }
+
+            $page = $request->query('page', 1);
+            $perPage = $request->query('count', 10);
+            $paginated = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Categories retrieved successfully',
+                'data' => $paginated->items(),
+                'total_categories' => $paginated->total(),
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+            ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
@@ -49,17 +61,6 @@ class CategoryController extends Controller
     }
 
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         try {
@@ -83,9 +84,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
         $category = Category::find($id);
@@ -96,18 +94,6 @@ class CategoryController extends Controller
 
         return response()->json(['status' => true, 'data' => $category]);
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Category $category)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         try {
@@ -147,9 +133,6 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
         $category = Category::find($id);
