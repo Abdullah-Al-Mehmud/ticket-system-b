@@ -302,33 +302,32 @@ class EventController extends Controller
                 ], 401);
             }
 
-            $perPage = (int) $request->get('count', 10);
-            $page = (int) $request->get('page', 1);
+            $perPage = (int) $request->query('count', 10);
+            $page = (int) $request->query('page', 1);
 
-            // Only those events where user is an organizer
-            $events = Event::with(['category', 'organizers'])
-                ->whereHas('organizers', function ($q) use ($userId) {
-                    $q->where('user_id', $userId);
-                })
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage, ['*'], 'page', $page);
+            $eventsQuery = Event::with(['category', 'organizers'])
+                ->whereHas('organizers', fn($query) => $query->where('user_id', $userId))
+                ->orderByDesc('created_at');
+
+            $events = $eventsQuery->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Your organized events retrieved successfully',
+                'message' => 'Your organized events retrieved successfully.',
                 'data' => $events->items(),
                 'total' => $events->total(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),
-            ], 200);
-        } catch (\Exception $e) {
+            ]);
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve your organized events. An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'message' => 'Failed to retrieve your organized events.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error',
             ], 500);
         }
     }
+
 
 
     public function assignOrganizers(Request $request)
