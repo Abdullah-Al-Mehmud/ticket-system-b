@@ -12,18 +12,19 @@ class TicketCategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = TicketCategory::with(['event'])->orderBy('id', 'desc');
+            $getAll = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
+            $page = (int) $request->query('page', 1);
+            $count = (int) $request->query('count', 10);
+            $search = $request->query('search');
 
+            $query = TicketCategory::with('event')->orderByDesc('id');
 
-            if ($request->filled('search')) {
-                $query->where('name', 'like', '%' . $request->search . '%');
+            if ($search) {
+                $query->where('name', 'like', "%{$search}%");
             }
 
-            $query->orderBy('created_at', 'desc');
-
-            if ($request->boolean('all')) {
+            if ($getAll) {
                 $ticketCategories = $query->get();
-
                 return response()->json([
                     'status' => true,
                     'message' => 'Ticket categories retrieved successfully',
@@ -32,10 +33,7 @@ class TicketCategoryController extends Controller
                 ]);
             }
 
-            $page = (int) $request->get('page', 1);
-            $perPage = (int) $request->get('count', 10);
-
-            $ticketCategories = $query->paginate($perPage, ['*'], 'page', $page);
+            $ticketCategories = $query->paginate($count, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
@@ -53,6 +51,7 @@ class TicketCategoryController extends Controller
             ], 500);
         }
     }
+
 
     public function store(Request $request)
     {
@@ -96,7 +95,7 @@ class TicketCategoryController extends Controller
     public function show($id)
     {
         try {
-            $category = TicketCategory::with('event','tickets')->find($id);
+            $category = TicketCategory::with('event', 'tickets')->find($id);
 
             if (!$category) {
                 return response()->json([
