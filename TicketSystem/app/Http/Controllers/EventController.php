@@ -148,7 +148,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories'])->find($id);
+            $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories','tickets'])->find($id);
 
             if (!$event) {
                 return response()->json([
