@@ -16,21 +16,58 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         try {
-            $count = $request->query('count');
-            $tickets = $count
-                ? Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->orderBy('id', 'desc')->paginate($count)
-                : Ticket::with('user', 'ticketCategory', 'ticketCategory.event')->orderBy('id', 'desc')->get();
+            $getAll = filter_var($request->query('all', false), FILTER_VALIDATE_BOOLEAN);
+            $page = (int) $request->query('page', 1);
+            $count = $request->query('count', 10);
+            $status = $request->query('status');
+            $search = $request->query('search');
+
+            $query = Ticket::with([
+                'user',
+                'ticketCategory',
+                'ticketCategory.event'
+            ])->orderByDesc('id');
+
+            if ($status) {
+                $query->where('status', $status);
+            }
+
+            if ($search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            }
+            if ($getAll) {
+                $tickets = $query->get();
+                return response()->json([
+                    'status' => true,
+                    'message' => 'All tickets retrieved successfully',
+                    'data' => $tickets,
+                    'total' => $tickets->count(),
+                ]);
+            }
+
+            $tickets = $query->paginate((int) $count, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Tickets retrieved successfully',
-                'data' => $tickets,
-                'total' => $count ? $tickets->total() : count($tickets)
+                'data' => $tickets->items(),
+                'total' => $tickets->total(),
+                'page' => $tickets->currentPage(),
+                'count' => $tickets->perPage(),
+                'last_page' => $tickets->lastPage(),
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Error fetching tickets', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Error fetching tickets',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
+
+
 
     public function store(Request $request)
     {
