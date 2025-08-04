@@ -54,8 +54,7 @@ class TicketController extends Controller
                 'message' => 'Tickets retrieved successfully',
                 'data' => $tickets->items(),
                 'total' => $tickets->total(),
-                'page' => $tickets->currentPage(),
-                'count' => $tickets->perPage(),
+                'current_page' => $tickets->currentPage(),
                 'last_page' => $tickets->lastPage(),
             ]);
         } catch (\Exception $e) {
