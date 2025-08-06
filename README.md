@@ -74,7 +74,19 @@ This will add a `JWT_SECRET` entry in your `.env` file. Without it, JWT tokens c
 
 ---
 
-### 6. Run the Application
+### 6. Create Storage Symlink
+
+To make files in `storage/app/public` publicly accessible (such as uploaded images), create a symbolic link:
+
+```bash
+php artisan storage:link
+```
+
+This will create a `public/storage` link pointing to `storage/app/public`.
+
+---
+
+### 7. Run the Application
 
 Once setup is complete, start the local development server:
 
@@ -85,8 +97,11 @@ php artisan serve
 By default, it will be available at `http://127.0.0.1:8000` or `http://localhost:8000`. Open this URL in your browser to view the application.
 
 ---
+---
+## OPTIONAL
+---
 
-### 7. Install and Compile NPM Dependencies (if applicable)
+### 8. Install and Compile NPM Dependencies (if applicable)
 
 If the project includes frontend assets managed by NPM or Yarn (e.g., Vue.js, React, Tailwind CSS), install and compile them:
 
@@ -105,17 +120,6 @@ npm run watch
 
 ---
 
-### 8. Create Storage Symlink
-
-To make files in `storage/app/public` publicly accessible (such as uploaded images), create a symbolic link:
-
-```bash
-php artisan storage:link
-```
-
-This will create a `public/storage` link pointing to `storage/app/public`.
-
----
 
 ## Publishing CORS Configuration
 
