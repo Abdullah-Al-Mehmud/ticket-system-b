@@ -33,10 +33,11 @@ class EventController extends Controller
             if ($request->filled('category')) {
                 $query->where('category_id', $request->category);
             }
+            if ($request->boolean('orderbyStatus')) {
+                $query->orderByRaw("FIELD(status, 'Upcoming', 'Live', 'Done', 'Cancelled') ASC");
+            }
 
-
-            $query->orderByRaw("FIELD(status, 'Upcoming', 'Live', 'Done', 'Cancelled') ASC")
-                ->orderBy('id', 'desc');
+            $query->orderBy('id', 'desc');
 
             if ($request->boolean('all')) {
                 $events = $query->get();
