@@ -97,8 +97,8 @@ php artisan serve
 By default, it will be available at `http://127.0.0.1:8000` or `http://localhost:8000`. Open this URL in your browser to view the application.
 
 ---
----
-## OPTIONAL
+
+## (OPTIONAL)
 ---
 
 ### 8. Install and Compile NPM Dependencies (if applicable)
