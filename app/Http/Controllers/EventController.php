@@ -17,7 +17,7 @@ class EventController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Event::with('category', 'organizers', 'creator');
+            $query = Event::with('category', 'organizers', 'creator', 'ticketCategories');
 
             if ($request->filled('search')) {
                 $query->where('title', 'like', '%' . $request->search . '%');
@@ -148,7 +148,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
-            $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories','tickets'])->find($id);
+            $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories', 'tickets'])->find($id);
 
             if (!$event) {
                 return response()->json([
