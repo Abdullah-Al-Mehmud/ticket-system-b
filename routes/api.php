@@ -23,6 +23,7 @@ Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout
 // Public Event Routes
 Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
+Route::get('/categories', [CategoryController::class, 'index']);
 
 // Protected Routes
 Route::middleware(['auth:api'])->group(function () {
@@ -47,7 +48,6 @@ Route::middleware(['auth:api'])->group(function () {
     Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
 
     // Category Manage
-    Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::patch('/categories/{id}', [CategoryController::class, 'update']);
