@@ -35,7 +35,8 @@ class EventController extends Controller
             }
 
 
-            $query->orderBy('id', 'desc');
+            $query->orderByRaw("FIELD(status, 'Upcoming', 'Live', 'Done', 'Cancelled') ASC")
+                ->orderBy('id', 'desc');
 
             if ($request->boolean('all')) {
                 $events = $query->get();
