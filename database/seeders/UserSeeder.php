@@ -15,16 +15,9 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            ['name' => 'Admin User', 'email' => 'admin@gmail.com', 'role' => 'admin'],
-            ['name' => 'Regular User', 'email' => 'user@gmail.com', 'role' => 'user'],
-            ['name' => 'Bob Smith', 'email' => 'bob@gmail.com', 'role' => 'user'],
-            ['name' => 'Charlie Davis', 'email' => 'charlie@gmail.com', 'role' => 'user'],
-            ['name' => 'Diana Lee', 'email' => 'diana@gmail.com', 'role' => 'user'],
-            ['name' => 'Ethan Brown', 'email' => 'ethan@gmail.com', 'role' => 'user'],
-            ['name' => 'Fiona Clark', 'email' => 'fiona@gmail.com', 'role' => 'user'],
-            ['name' => 'George Wilson', 'email' => 'george@gmail.com', 'role' => 'user'],
-            ['name' => 'Hannah Martin', 'email' => 'hannah@gmail.com', 'role' => 'user'],
-            ['name' => 'Ian Thompson', 'email' => 'ian@gmail.com', 'role' => 'user'],
+            ['name' => 'Admin', 'email' => 'admin@gmail.com', 'role' => 'admin'],
+            ['name' => 'user', 'email' => 'user@gmail.com', 'role' => 'user'],
+            ['name' => 'Jone Doe', 'email' => 'jone@gmail.com', 'role' => 'user'],
         ];
 
         foreach ($users as $u) {

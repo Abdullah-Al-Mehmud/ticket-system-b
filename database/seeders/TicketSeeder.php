@@ -28,7 +28,7 @@ class TicketSeeder extends Seeder
 
         $statuses = ['Confirmed', 'Cancelled', 'Refunded'];
 
-        foreach (range(1, 50) as $i) {
+        foreach (range(1, 2) as $i) {
             DB::beginTransaction();
 
             try {

@@ -23,17 +23,12 @@ class TicketCategorySeeder extends Seeder
 
         // Realistic ticket category names with common pricing tiers
         $ticketTypes = [
-            ['name' => 'General Admission', 'price' => 200],
             ['name' => 'VIP Pass', 'price' => 500],
-            ['name' => 'Early Bird', 'price' => 150],
             ['name' => 'Student Pass', 'price' => 100],
-            ['name' => 'Group Package', 'price' => 800],
-            ['name' => 'Premium Seat', 'price' => 700],
-            ['name' => 'Backstage Access', 'price' => 1200],
         ];
 
         foreach ($events as $event) {
-            $numCategories = rand(1, 3);
+            $numCategories = rand(1, 2);
             $usedIndexes = [];
 
             for ($i = 1; $i <= $numCategories; $i++) {

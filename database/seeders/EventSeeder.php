@@ -49,21 +49,7 @@ class EventSeeder extends Seeder
             'Live Jazz & Wine Evening',
             'AI & Machine Learning Workshop',
             'Health & Wellness Fair',
-            'Art & Culture Exhibition',
-            'Digital Marketing Summit',
-            'Blockchain for Business Seminar',
-            'Photography Masterclass',
-            'Online Coding Bootcamp',
-            'Women in Leadership Conference',
-            'Sustainable Living Expo',
-            'Gaming and Esports Meetup',
-            'Creative Writing Workshop',
-            'Finance & Investment Forum',
-            'Indie Film Screening Night',
-            'UX/UI Design Sprint',
-            'Mobile App Hackathon',
-            'Public Speaking Bootcamp',
-            'VR & AR Innovation Showcase',
+            
         ];
 
         foreach ($eventTitles as $index => $title) {

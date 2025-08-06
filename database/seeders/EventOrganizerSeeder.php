@@ -24,7 +24,7 @@ class EventOrganizerSeeder extends Seeder
 
         $assignments = [];
 
-        for ($i = 0; $i < 15; $i++) {
+        for ($i = 0; $i < 2; $i++) {
             $eventId = $events->random();
             $userId = $users->random();
 
