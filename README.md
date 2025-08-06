@@ -1,142 +1,150 @@
-Laravel প্রজেক্ট Git থেকে ক্লোন করার পর কিছু গুরুত্বপূর্ণ ধাপ অনুসরণ করতে হয় যাতে প্রজেক্টটি লোকাল মেশিনে সঠিকভাবে কাজ করে। নিচে এর বিস্তারিত বর্ণনা দেওয়া হলো:
+
+After cloning the Laravel project from Git, there are some important steps to follow to ensure the project works correctly on your local machine. Below are the detailed instructions:
 
 ---
 
-## ক্লোন করার পর প্রাথমিক সেটআপ 🚀
+## Initial Setup After Cloning 🚀
 
-### ১. ডিপেন্ডেন্সি ইনস্টল করা (Composer)
+### 1. Install Dependencies (Composer)
 
-প্রজেক্টের প্রয়োজনীয় PHP ডিপেন্ডেন্সিগুলো ইনস্টল করতে হবে। এর জন্য প্রজেক্টের রুট ডিরেক্টরিতে গিয়ে Composer রান করুন:
+Run Composer in the project root to install the required PHP dependencies:
 
 ```bash
 composer install
 ```
 
-যদি `composer.lock` ফাইল না থাকে বা আপনি সব ডিপেন্ডেন্সি আপডেট করতে চান, তাহলে `composer update` ব্যবহার করতে পারেন।
+If the `composer.lock` file is missing or you want to update all dependencies, use:
 
-\<hr/\>
+```bash
+composer update
+```
 
-### ২. এনভায়রনমেন্ট ফাইল সেটআপ (`.env`)
+---
 
-Laravel তার কনফিগারেশনের জন্য `.env` ফাইল ব্যবহার করে। এই ফাইলটি সাধারণত Git রিপোজিটরিতে থাকে না (কারণ এটি সংবেদনশীল ডেটা ধারণ করে)।
-প্রথমে `.env.example` ফাইলটি কপি করে `.env` নামে রিনেম করুন:
+### 2. Environment File Setup (`.env`)
+
+Laravel uses the `.env` file for configuration, and it is not committed to the repository because it contains sensitive data. Copy the example file and rename it:
 
 ```bash
 cp .env.example .env
 ```
 
-এরপর `.env` ফাইলটি ওপেন করে আপনার **ডাটাবেজ কানেকশন ডিটেইলস** (DB_DATABASE, DB_USERNAME, DB_PASSWORD) এবং অন্যান্য এনভায়রনমেন্ট ভ্যারিয়েবল (যেমন APP_URL) সঠিকভাবে কনফিগার করুন।
+Then open `.env` and set your database connection details (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) as well as other environment variables such as `APP_URL`.
 
-\<hr/\>
+---
 
-### ৩. অ্যাপ্লিকেশন কী জেনারেট করা
+### 3. Generate Application Key
 
-Laravel অ্যাপ্লিকেশন সিকিউরিটির জন্য একটি ইউনিক অ্যাপ্লিকেশন কী প্রয়োজন। এটি `.env` ফাইলে সেট করা হয়।
+Laravel requires a unique application key for security. Generate and set the `APP_KEY` in your `.env` file:
 
 ```bash
 php artisan key:generate
 ```
 
-এই কমান্ডটি `.env` ফাইলে `APP_KEY` ভ্যালুটি সেট করে দেবে।
+---
 
-\<hr/\>
+### 4. Database Migrations and Seeding
 
-### ৪. ডাটাবেজ মাইগ্রেশন ও সীডিং
-
-যদি প্রজেক্টে ডাটাবেজ মাইগ্রেশন এবং সীডার থাকে, তাহলে সেগুলোকে রান করতে হবে যাতে ডাটাবেজ স্কিমা তৈরি হয় এবং প্রাথমিক ডেটা যোগ হয়:
+If your project includes migrations and seeders, run them to create the database schema and initial data:
 
 ```bash
 php artisan migrate
-php artisan db:seed # যদি ডামি ডেটা সীড করতে চান
+php artisan db:seed # to seed dummy data
 ```
+
+Or run migrations fresh and seed in one step:
+
 ```bash
 php artisan migrate:fresh --seed
 ```
-**গুরুত্বপূর্ণ:** যদি আপনি ডাটাবেজ পরিষ্কার করে নতুনভাবে শুরু করতে চান, তাহলে `php artisan migrate:fresh --seed` ব্যবহার করতে পারেন। এটি সব টেবিল ড্রপ করে নতুন করে মাইগ্রেট করবে এবং সীড করবে।
 
-\<hr/\>
-### ৫. JWT টোকেন ক্রিয়েট করার টার্মিনাল কমান্ড
+**Note:** `migrate:fresh --seed` will drop all tables, rebuild the schema, and then run the seeders.
 
-এরপর JWT টোকেনের জন্য সিক্রেট কী জেনারেট করতে এই কমান্ডটি চালান:
+---
+
+### 5. Generate JWT Secret Key
+
+If your project uses JWT authentication, generate the secret key:
 
 ```bash
 php artisan jwt:secret
 ```
 
-এই কমান্ডটি আপনার `.env` ফাইলে `JWT_SECRET` নামের একটি এন্ট্রি যোগ করবে। এই সিক্রেট কী ছাড়া JWT টোকেন তৈরি বা ভেরিফাই করা যাবে না, তাই এটি অত্যন্ত গুরুত্বপূর্ণ।
+This will add a `JWT_SECRET` entry in your `.env` file. Without it, JWT tokens cannot be created or verified.
 
+---
 
-\<hr/\>
+### 6. Run the Application
 
-### ৬. অ্যাপ্লিকেশনের সার্ভার চালানো
-
-সব সেটআপ হয়ে গেলে, আপনি অ্যাপ্লিকেশনটি লোকালি রান করতে পারবেন:
+Once setup is complete, start the local development server:
 
 ```bash
 php artisan serve
 ```
 
-সাধারণত এটি `http://127.0.0.1:8000` অথবা `http://localhost:8000` অ্যাড্রেসে চালু হবে। আপনি আপনার ব্রাউজারে এই অ্যাড্রেস ভিজিট করে প্রজেক্টটি দেখতে পারবেন।
+By default, it will be available at `http://127.0.0.1:8000` or `http://localhost:8000`. Open this URL in your browser to view the application.
 
-\<hr/\>
+---
 
-### ৭. NPM ডিপেন্ডেন্সি ইনস্টল ও কম্পাইল করা (যদি থাকে)
+### 7. Install and Compile NPM Dependencies (if applicable)
 
-যদি আপনার Laravel প্রজেক্টে frontend অ্যাসেট (যেমন Vue.js, React.js, Tailwind CSS) থাকে এবং সেগুলো NPM বা Yarn দিয়ে ম্যানেজ করা হয়, তাহলে সেগুলো ইনস্টল ও কম্পাইল করতে হবে:
+If the project includes frontend assets managed by NPM or Yarn (e.g., Vue.js, React, Tailwind CSS), install and compile them:
 
 ```bash
-npm install # অথবা yarn install
-npm run dev # ডেভেলপমেন্টের জন্য
-# অথবা
-npm run build # প্রোডাকশনের জন্য
+npm install # or yarn install
+npm run dev # for development
+# or
+npm run build # for production
 ```
 
-ডেভেলপমেন্টের সময় CSS/JS পরিবর্তন হলে অটোমেটিকভাবে কম্পাইল করার জন্য `npm run watch` কমান্ড ব্যবহার করতে পারেন।
+For automatic recompilation during development:
 
+```bash
+npm run watch
+```
 
-### ৮. সিম্বলিক লিঙ্ক তৈরি করা (Storage Link)
+---
 
-Laravel এর `storage` ফোল্ডারের ফাইলগুলো (যেমন আপলোড করা ছবি) পাবলিকলি অ্যাক্সেস করার জন্য একটি সিম্বলিক লিঙ্ক তৈরি করতে হয়:
+### 8. Create Storage Symlink
+
+To make files in `storage/app/public` publicly accessible (such as uploaded images), create a symbolic link:
 
 ```bash
 php artisan storage:link
 ```
 
-এটি `public/storage` নামে একটি লিঙ্ক তৈরি করবে যা `storage/app/public` ফোল্ডারকে পয়েন্ট করবে।
+This will create a `public/storage` link pointing to `storage/app/public`.
 
+---
 
-### Install Process সম্পূর্ণ করার প্রক্রিয়া (যদি আপনি কিছু অন্য প্রজেক্ট ইনস্টল করেন, তাহলে এটি চালান)
+## Publishing CORS Configuration
 
-### CORS কনফিগারেশন ফাইল পাবলিশ করার টার্মিনাল কমান্ড
-
-Laravel এ CORS ম্যানেজ করার জন্য সাধারণত `fruitcake/laravel-cors` প্যাকেজটি ব্যবহার করা হয়। এই প্যাকেজের কনফিগারেশন ফাইলটি পাবলিশ করার জন্য একটি কমান্ড রয়েছে।
-
-প্রথমে নিশ্চিত করুন `fruitcake/laravel-cors` প্যাকেজটি আপনার প্রজেক্টে ইনস্টল করা আছে। যদি না থাকে, তাহলে এটি ইনস্টল করুন:
+If your API needs CORS support and you are using the `fruitcake/laravel-cors` package, first install it:
 
 ```bash
 composer require fruitcake/laravel-cors
 ```
 
-প্যাকেজটি ইনস্টল করার পর, CORS কনফিগারেশন ফাইলটি আপনার `config` ডিরেক্টরিতে পাবলিশ করতে এই কমান্ডটি চালান:
+Then publish the CORS configuration file:
 
 ```bash
 php artisan vendor:publish --tag="cors"
 ```
 
-এই কমান্ডটি আপনার প্রজেক্টের `config` ফোল্ডারে `cors.php` নামে একটি ফাইল তৈরি করবে। এই ফাইলটিতে আপনি আপনার ফ্রন্টএন্ড অ্যাপ্লিকেশনের URL (যেমন `http://localhost:3000` অথবা আপনার প্রোডাকশন ডোমেইন) এবং অন্যান্য CORS নীতি (যেমন কোন HTTP মেথড বা হেডার অনুমোদিত) সেট করতে পারবেন।
-
-কনফিগারেশন ফাইলটি পাবলিশ করার পর, আপনার `.env` ফাইলে `CORS_ALLOWED_ORIGINS` ভ্যালুটি সেট করে অথবা সরাসরি `config/cors.php` ফাইলটি এডিট করে আপনার ফ্রন্টএন্ডের ডোমেইন যোগ করতে ভুলবেন না।
+This will create `config/cors.php`. In this file you can specify your frontend domains and other CORS settings:
 
 ```php
 // config/cors.php
 
+'paths' => ['api/*'],
+'allowed_methods' => ['*'],
 'allowed_origins' => ['http://localhost:3000', 'https://your-frontend-domain.com'],
 ```
 
-এরপর কনফিগারেশন ক্যাশে ক্লিয়ার করুন:
+Finally, clear the configuration cache:
 
 ```bash
 php artisan config:clear
 ```
 
-এই কমান্ডগুলো আপনার Laravel API কে JWT ভিত্তিক অথেন্টিকেশন এবং CORS সঠিকভাবে কাজ করার জন্য প্রস্তুত করবে।
+This will prepare your Laravel API for JWT-based authentication and proper CORS handling.
