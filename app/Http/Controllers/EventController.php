@@ -295,40 +295,46 @@ class EventController extends Controller
     public function myEvent(Request $request)
     {
         try {
-            $userId = Auth::id();
+            $requestedUserId = (int) $request->query('user_id');
+            $authUserId = Auth::id();
+
+            $userId = $requestedUserId ?: $authUserId;
 
             if (!$userId) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Authentication required to view your events.'
+                    'message' => 'Authentication or valid user_id is required to view events.'
                 ], 401);
             }
 
             $perPage = (int) $request->query('count', 10);
             $page = (int) $request->query('page', 1);
 
-            $eventsQuery = Event::with(['category', 'organizers'])
-                ->whereHas('organizers', fn($query) => $query->where('user_id', $userId))
-                ->orderByDesc('created_at');
-
-            $events = $eventsQuery->paginate($perPage, ['*'], 'page', $page);
+            $events = Event::with(['category', 'organizers','creator'])
+                ->whereHas('organizers', function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                })
+                ->orderByDesc('created_at')
+                ->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Your organized events retrieved successfully.',
+                'message' => 'Events retrieved successfully.',
                 'data' => $events->items(),
                 'total' => $events->total(),
                 'current_page' => $events->currentPage(),
                 'last_page' => $events->lastPage(),
+                'per_page' => $events->perPage(),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve your organized events.',
+                'message' => 'Failed to retrieve events.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Server error',
             ], 500);
         }
     }
+
 
 
 

@@ -61,6 +61,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember', false);
 
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json([
@@ -71,8 +72,9 @@ class AuthController extends Controller
 
         $user = Auth::guard('api')->user();
 
+        $minutes = $remember ? (60 * 24 * 30) : 60;
 
-        $cookie = Cookie::make('token', $token, 60 * 24 * 30) // 30 দিন
+        $cookie = Cookie::make('token', $token, $minutes)
             ->withPath('/')
             ->withHttpOnly(true)
             ->withSameSite('None')
@@ -87,12 +89,13 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->getRoleNames()->first(), // ✅ Spatie Role
+                'role' => $user->getRoleNames()->first(),
                 'image_url' => $user->image_url,
                 'permissions' => $user->getAllPermissions()->pluck('name'),
             ]
         ], 200)->withCookie($cookie);
     }
+
 
 
     //LogOut User
