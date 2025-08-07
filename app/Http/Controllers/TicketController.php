@@ -269,22 +269,40 @@ class TicketController extends Controller
     public function myTickets(Request $request)
     {
         try {
-            $user = Auth::guard('api')->user();
-            $perPage = $request->query('count', 10);
+            $requestedUserId = (int) $request->query('user_id');
+            $authUser = Auth::guard('api')->user();
+            $userId = $requestedUserId ?: ($authUser ? $authUser->id : null);
 
-            $tickets = Ticket::with('ticketCategory', 'ticketCategory.event')
-                ->where('user_id', $user->id)
-                ->latest()
-                ->paginate($perPage);
+            if (!$userId) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Authentication or valid user_id is required to view tickets.'
+                ], 401);
+            }
+
+            $perPage = (int) $request->query('count', 10);
+            $page = (int) $request->query('page', 1);
+
+            $tickets = Ticket::with(['ticketCategory', 'ticketCategory.event'])
+                ->where('user_id', $userId)
+                ->orderByDesc('created_at')
+                ->paginate($perPage, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
-                'message' => 'My tickets retrieved successfully',
+                'message' => 'Tickets retrieved successfully.',
                 'data' => $tickets->items(),
-                'total' => $tickets->total()
+                'total' => $tickets->total(),
+                'current_page' => $tickets->currentPage(),
+                'last_page' => $tickets->lastPage(),
+                'per_page' => $tickets->perPage(),
             ]);
-        } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Failed to retrieve your tickets', 'error' => $e->getMessage()], 500);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to retrieve tickets.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server error',
+            ], 500);
         }
     }
 }
