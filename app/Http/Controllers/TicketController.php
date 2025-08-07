@@ -131,9 +131,11 @@ class TicketController extends Controller
             $event = $ticket->ticketCategory?->event;
 
             $ticketPrice = $ticket->ticketCategory?->price;
+            $ticket_category_id = $ticket->ticketCategory?->id;
 
             $response = [
                 'ticket_id' => $ticket->id,
+                'ticket_category_id' => $ticket_category_id,
                 'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
                 'quantity' => $ticket->quantity,
                 'status' => $ticket->status,
