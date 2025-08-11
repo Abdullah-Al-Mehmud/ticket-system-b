@@ -125,7 +125,8 @@ class TicketController extends Controller
             $ticket = Ticket::with([
                 'ticketCategory:id,event_id,name,price',
                 'ticketCategory.event:id,title,location,start_date,end_date,category_id',
-                'ticketCategory.event.category:id,name'
+                'ticketCategory.event.category:id,name',
+                'user',
             ])->findOrFail($id);
 
             $event = $ticket->ticketCategory?->event;
@@ -152,6 +153,11 @@ class TicketController extends Controller
                 'ticket_category_name' => $ticket_category_name,
                 'price_per_ticket' => number_format($ticketPrice, 2),
                 'total_price' => number_format($ticketPrice * $ticket->quantity, 2),
+                'user' => [
+                    'id' => $ticket->user?->id,
+                    'name' => $ticket->user?->name,
+                    'email' => $ticket->user?->email,
+                ],
             ];
 
             return response()->json([
