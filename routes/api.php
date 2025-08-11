@@ -25,6 +25,9 @@ Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 
+// Verify Ticket
+Route::post('/ticket-verify', [TicketController::class, 'verifyTicket']);
+
 
 // Protected Routes
 Route::middleware(['auth:api'])->group(function () {

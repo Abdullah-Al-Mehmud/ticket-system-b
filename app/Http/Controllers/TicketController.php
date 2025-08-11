@@ -142,6 +142,7 @@ class TicketController extends Controller
                 'quantity' => $ticket->quantity,
                 'status' => $ticket->status,
                 'event' => [
+                    'id' => $event->id,
                     'title' => $event?->title,
                     'location' => $event?->location,
                     'start_date' => $event?->start_date,
@@ -312,6 +313,57 @@ class TicketController extends Controller
                 'status' => false,
                 'message' => 'Failed to retrieve tickets.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Server error',
+            ], 500);
+        }
+    }
+
+
+    public function verifyTicket(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'user_name' => 'required',
+                'event_id' => 'required',
+                'ticket_id' => 'required'
+            ]);
+
+            $ticket = Ticket::where('id', $validatedData['ticket_id'])
+                ->whereHas('ticketCategory.event', function ($query) use ($validatedData) {
+                    $query->where('id', $validatedData['event_id']);
+                })
+                ->first();
+
+            if (!$ticket) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket not found or does not belong to this event.'
+                ], 404);
+            }
+
+            // if ($ticket->status === 'used') {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => 'Ticket has already been used.'
+            //     ], 400);
+            // }
+            // $ticket->update(['status' => 'used']);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket verified and marked as used.',
+                'ticket' => $ticket,
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
