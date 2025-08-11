@@ -132,6 +132,7 @@ class TicketController extends Controller
 
             $ticketPrice = $ticket->ticketCategory?->price;
             $ticket_category_id = $ticket->ticketCategory?->id;
+            $ticket_category_name = $ticket->ticketCategory?->name;
 
             $response = [
                 'ticket_id' => $ticket->id,
@@ -148,6 +149,7 @@ class TicketController extends Controller
                         'name' => $event?->category?->name
                     ],
                 ],
+                'ticket_category_name' => $ticket_category_name,
                 'price_per_ticket' => number_format($ticketPrice, 2),
                 'total_price' => number_format($ticketPrice * $ticket->quantity, 2),
             ];
