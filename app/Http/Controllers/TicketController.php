@@ -376,7 +376,8 @@ class TicketController extends Controller
                 'ticket_id' => 'required'
             ]);
 
-            $ticket = Ticket::where('id', $validatedData['ticket_id'])
+            $ticket = Ticket::with(['user', 'ticketCategory.event'])
+                ->where('id', $validatedData['ticket_id'])
                 ->whereHas('ticketCategory.event', function ($query) use ($validatedData) {
                     $query->where('id', $validatedData['event_id']);
                 })
@@ -398,10 +399,16 @@ class TicketController extends Controller
 
             $ticket->update(['is_verify' => true]);
 
+            $ticketData = [
+                'user_name' => $ticket->user->name ?? null,
+                'event_name' => $ticket->ticketCategory->event->title ?? null,
+                'is_verify' => $ticket->is_verify,
+            ];
+
             return response()->json([
                 'status' => true,
                 'message' => 'Ticket successfully verified.',
-                'ticket' => $ticket
+                'ticket' => $ticketData
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([
