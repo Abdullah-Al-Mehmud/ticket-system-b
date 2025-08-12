@@ -125,7 +125,8 @@ class TicketController extends Controller
             $ticket = Ticket::with([
                 'ticketCategory:id,event_id,name,price',
                 'ticketCategory.event:id,title,location,start_date,end_date,category_id',
-                'ticketCategory.event.category:id,name'
+                'ticketCategory.event.category:id,name',
+                'user',
             ])->findOrFail($id);
 
             $event = $ticket->ticketCategory?->event;
@@ -141,6 +142,7 @@ class TicketController extends Controller
                 'quantity' => $ticket->quantity,
                 'status' => $ticket->status,
                 'event' => [
+                    'id' => $event->id,
                     'title' => $event?->title,
                     'location' => $event?->location,
                     'start_date' => $event?->start_date,
@@ -152,6 +154,11 @@ class TicketController extends Controller
                 'ticket_category_name' => $ticket_category_name,
                 'price_per_ticket' => number_format($ticketPrice, 2),
                 'total_price' => number_format($ticketPrice * $ticket->quantity, 2),
+                'user' => [
+                    'id' => $ticket->user?->id,
+                    'name' => $ticket->user?->name,
+                    'email' => $ticket->user?->email,
+                ],
             ];
 
             return response()->json([
@@ -306,6 +313,58 @@ class TicketController extends Controller
                 'status' => false,
                 'message' => 'Failed to retrieve tickets.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Server error',
+            ], 500);
+        }
+    }
+
+
+    public function verifyTicket(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'user_name' => 'required',
+                'event_id' => 'required',
+                'ticket_id' => 'required'
+            ]);
+
+            $ticket = Ticket::where('id', $validatedData['ticket_id'])
+                ->whereHas('ticketCategory.event', function ($query) use ($validatedData) {
+                    $query->where('id', $validatedData['event_id']);
+                })
+                ->first();
+
+            if (!$ticket) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket not found or does not belong to this event.'
+                ], 404);
+            }
+
+            if ($ticket->is_verify) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket has already been verified.'
+                ], 400);
+            }
+
+            $ticket->update(['is_verify' => true]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket successfully verified.',
+                'ticket' => $ticket
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
