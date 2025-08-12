@@ -11,6 +11,7 @@ class Ticket extends Model
         'ticket_category_id',
         'quantity',
         'status',
+        'is_verify',
     ];
 
     public function user()

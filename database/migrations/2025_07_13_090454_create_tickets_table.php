@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('ticket_category_id')->constrained('ticket_categories')->onDelete('cascade');
             $table->integer('quantity');
             $table->enum('status', ["Confirmed", "Cancelled", "Refunded"])->default('Confirmed');
+            $table->boolean('is_verify')->default(false);
             $table->timestamps();
         });
     }

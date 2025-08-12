@@ -340,18 +340,19 @@ class TicketController extends Controller
                 ], 404);
             }
 
-            // if ($ticket->status === 'used') {
-            //     return response()->json([
-            //         'status' => false,
-            //         'message' => 'Ticket has already been used.'
-            //     ], 400);
-            // }
-            // $ticket->update(['status' => 'used']);
+            if ($ticket->is_verify) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket has already been verified.'
+                ], 400);
+            }
+
+            $ticket->update(['is_verify' => true]);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket verified and marked as used.',
-                'ticket' => $ticket,
+                'message' => 'Ticket successfully verified.',
+                'ticket' => $ticket
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([
