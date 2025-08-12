@@ -317,6 +317,55 @@ class TicketController extends Controller
         }
     }
 
+    public function checkTicket(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'user_name' => 'required',
+                'event_id' => 'required',
+                'ticket_id' => 'required',
+            ]);
+
+            $ticket = Ticket::with(['user', 'ticketCategory.event'])
+                ->where('id', $validatedData['ticket_id'])
+                ->whereHas('ticketCategory.event', function ($query) use ($validatedData) {
+                    $query->where('id', $validatedData['event_id']);
+                })
+                ->whereHas('user', function ($query) use ($validatedData) {
+                    $query->where('name', $validatedData['user_name']);
+                })
+                ->first();
+
+            if (!$ticket) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Ticket not found for given user and event.',
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Ticket found.',
+                'data' => [
+                    'user_name' => $ticket->user->name ?? null,
+                    'event_name' => $ticket->ticketCategory->event->title ?? null,
+                    'is_verify' => $ticket->is_verify,
+                ],
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation failed.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function verifyTicket(Request $request)
     {

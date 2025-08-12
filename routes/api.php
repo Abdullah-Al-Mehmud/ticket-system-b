@@ -27,6 +27,7 @@ Route::get('/categories', [CategoryController::class, 'index']);
 
 // Verify Ticket
 Route::post('/ticket-verify', [TicketController::class, 'verifyTicket']);
+Route::post('/ticket-check', [TicketController::class, 'checkTicket']);
 
 
 // Protected Routes
