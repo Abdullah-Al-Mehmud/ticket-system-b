@@ -16,6 +16,7 @@ class Event extends Model
         'end_date',
         'privacy_policy',
         'image_url',
+        'is_featured',
         'status',
     ];
 

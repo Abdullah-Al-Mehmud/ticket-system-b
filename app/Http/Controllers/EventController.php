@@ -27,6 +27,10 @@ class EventController extends Controller
                 $query->where('status', $request->status);
             }
 
+            if ($request->filled('featured')) {
+                $query->where('is_featured', $request->featured);
+            }
+
             if ($request->filled('date')) {
                 $query->whereDate('created_at', $request->date);
             }
@@ -204,6 +208,7 @@ class EventController extends Controller
             'privacy_policy'    => 'sometimes|required|string',
             'image_url'         => 'sometimes|nullable|image|mimes:jpeg,png,jpg',
             'status'            => 'sometimes|required|in:Upcoming,Live,Done,Cancelled',
+            'is_featured'          => 'sometimes|required|boolean',
             'category_id'       => 'sometimes|required|exists:categories,id',
             'created_by'        => 'prohibited',
         ]);
@@ -225,6 +230,7 @@ class EventController extends Controller
                 'end_date',
                 'privacy_policy',
                 'status',
+                'is_featured',
                 'category_id'
             ]);
 

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->text('privacy_policy');
             $table->string('image_url')->nullable();
             $table->enum('status', allowed: ['Upcoming', 'Live', 'Done', 'Cancelled'])->default('Upcoming');
+            $table->boolean('is_featured')->default(false);
             $table->timestamps();
         });
     }
