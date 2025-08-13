@@ -386,11 +386,22 @@ class TicketController extends Controller
     public function verifyTicket(Request $request)
     {
         try {
+            $loggedInUser = Auth::guard('api')->user();
             $validatedData = $request->validate([
                 'user_name' => 'required',
                 'event_id' => 'required',
                 'ticket_id' => 'required'
             ]);
+            $isOrganizer = EventOrganizer::where('event_id', $validatedData['event_id'])
+                ->where('user_id', $loggedInUser->id)
+                ->exists();
+
+            if (!$isOrganizer) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not authorized to check tickets for this event.',
+                ], 403);
+            }
 
             $ticket = Ticket::with(['user', 'ticketCategory.event'])
                 ->where('id', $validatedData['ticket_id'])
