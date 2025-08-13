@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\EventOrganizer;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -320,11 +321,25 @@ class TicketController extends Controller
     public function checkTicket(Request $request)
     {
         try {
+            $loggedInUser = Auth::guard('api')->user();
+
             $validatedData = $request->validate([
                 'user_name' => 'required',
                 'event_id' => 'required',
                 'ticket_id' => 'required',
             ]);
+
+            // Step 2: Check if logged-in user is organizer of the given event
+            $isOrganizer = EventOrganizer::where('event_id', $validatedData['event_id'])
+                ->where('user_id', $loggedInUser->id)
+                ->exists();
+
+            if (!$isOrganizer) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not authorized to check tickets for this event.',
+                ], 403);
+            }
 
             $ticket = Ticket::with(['user', 'ticketCategory.event'])
                 ->where('id', $validatedData['ticket_id'])
@@ -339,7 +354,7 @@ class TicketController extends Controller
             if (!$ticket) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket not found for given user and event.',
+                    'message' => 'Ticket not found for the given user and event.',
                 ], 404);
             }
 
@@ -356,16 +371,17 @@ class TicketController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Validation failed.',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function verifyTicket(Request $request)
     {
