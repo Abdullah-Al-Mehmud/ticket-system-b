@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>AI & Machine Learning Workshop Ticket</title>
+    <title>{{ $ticket->ticket_number }}</title>
 </head>
 
 <body style="margin:0;padding:16px;font-family:'Courier New', monospace;">
@@ -16,14 +16,15 @@
                 <table style="width:100%;">
                     <tr>
                         <td>
-                            <h2 style="margin:0;color:#111827;">AI & Machine Learning Workshop</h2>
-                            <p style="margin:4px 0;color:#4b5563;">Location: Festville</p>
+                            <h2 style="margin:0;color:#111827;">{{ $ticket->event->title }}</h2>
+                            <p style="margin:4px 0;color:#4b5563;">{{ $ticket->event->location }}</p>
                         </td>
                         <td style="text-align:right;">
                             <div
                                 style="background:#d97706;color:#fff;padding:4px 8px;border-radius:4px;display:inline-block;font-size:12px;">
-                                CONFIRMED</div>
-                            <p style="margin:4px 0;font-size:12px;color:#6b7280;">#TKT-000005</p>
+                                {{ $ticket->status }}
+                            </div>
+                            <p style="margin:4px 0;font-size:12px;color:#6b7280;">#{{ $ticket->ticket_number }}</p>
                         </td>
                     </tr>
                 </table>
@@ -37,21 +38,25 @@
                     <tr>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">Start Date</strong><br>
-                            <span style="font-size:18px;color:#111827;">Aug 17, 2025</span>
+                            <span
+                                style="font-size:18px;color:#111827;">{{ \Carbon\Carbon::parse($ticket->event->start_date)->format('M d, Y') }}</span>
                         </td>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">End Date</strong><br>
-                            <span style="font-size:18px;color:#111827;">Aug 17, 2025</span>
+                            <span
+                                style="font-size:18px;color:#111827;">{{ \Carbon\Carbon::parse($ticket->event->end_date)->format('M d, Y') }}</span>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">Start Time</strong><br>
-                            <span style="font-size:18px;color:#111827;">6:05 PM</span>
+                            <span
+                                style="font-size:18px;color:#111827;">{{ \Carbon\Carbon::parse($ticket->event->start_date)->format('h:i A') }}</span>
                         </td>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">End Time</strong><br>
-                            <span style="font-size:18px;color:#111827;">10:05 PM</span>
+                            <span
+                                style="font-size:18px;color:#111827;">{{ \Carbon\Carbon::parse($ticket->event->end_date)->format('h:i A') }}</span>
                         </td>
                     </tr>
                 </table>
@@ -61,15 +66,15 @@
                     <tr>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">Ticket Category</strong><br>
-                            <span style="font-size:18px;color:#111827;">VIP Pass</span>
+                            <span style="font-size:18px;color:#111827;">{{ $ticket->ticket_category_name }}</span>
                         </td>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">Quantity</strong><br>
-                            <span style="font-size:18px;color:#111827;">1 TICKET</span>
+                            <span style="font-size:18px;color:#111827;">{{ $ticket->quantity }} TICKET</span>
                         </td>
                         <td style="padding:4px;">
                             <strong style="font-size:12px;color:#6b7280;">Price Each</strong><br>
-                            <span style="font-size:18px;color:#111827;">Tk.500</span>
+                            <span style="font-size:18px;color:#111827;">Tk.{{ $ticket->price_per_ticket }}</span>
                         </td>
                     </tr>
                 </table>
@@ -78,7 +83,8 @@
                     <tr>
                         <td><strong style="font-size:12px;color:#6b7280;">Total Amount</strong></td>
                         <td style="text-align:right;"><span
-                                style="font-size:30px;font-weight:bold;color:#d97706;">Tk.500</span></td>
+                                style="font-size:30px;font-weight:bold;color:#d97706;">Tk.{{ $ticket->total_price }}</span>
+                        </td>
                     </tr>
                 </table>
             </td>
@@ -88,8 +94,9 @@
                 <p style="font-size:12px;color:#6b7280;margin:8px 0;">Admit One</p>
                 <p
                     style="font-size:12px;color:#d97706;border:1px solid #d97706;padding:2px 6px;border-radius:4px;margin:8px 0;">
-                    #TKT-000005</p>
-                <p style="font-size:12px;color:#4b5563;margin:8px 0;">Aug 17, 2025</p>
+                    #{{ $ticket->ticket_number }}</p>
+                <p style="font-size:12px;color:ticket_number#4b5563;margin:8px 0;">
+                    {{ \Carbon\Carbon::parse($ticket->event->start_date)->format('M d, Y') }}</p>
                 <div style="width:140px;height:140px;margin:16px auto;border:2px solid #e5e7eb;background:#000;">
                     <!-- Replace with QR image -->
                     {{-- <img src="data:image/png;base64,{{ $qrBase64 }}" alt="QR" style="width:100%;height:100%;"> --}}
