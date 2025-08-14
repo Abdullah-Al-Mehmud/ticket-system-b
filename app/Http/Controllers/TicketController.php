@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventOrganizer;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -449,6 +450,52 @@ class TicketController extends Controller
                 'message' => 'An unexpected error occurred.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+    public function download($id)
+    {
+        try {
+            $ticket = Ticket::with([
+                'ticketCategory:id,event_id,name,price',
+                'ticketCategory.event:id,title,location,start_date,end_date,category_id',
+                'ticketCategory.event.category:id,name',
+                'user',
+            ])->findOrFail($id);
+
+            $event = $ticket->ticketCategory?->event;
+            $ticketPrice = $ticket->ticketCategory?->price;
+            $ticketCategoryId = $ticket->ticketCategory?->id;
+            $ticketCategoryName = $ticket->ticketCategory?->name;
+
+            $ticketData = (object) [
+                'ticket_id' => $ticket->id,
+                'ticket_category_id' => $ticketCategoryId,
+                'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                'quantity' => $ticket->quantity,
+                'status' => $ticket->status,
+                'event' => $event ? (object) [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'location' => $event->location,
+                    'start_date' => $event->start_date,
+                    'end_date' => $event->end_date,
+                    'category' => $event->category ? (object)['name' => $event->category->name] : null,
+                ] : null,
+                'ticket_category_name' => $ticketCategoryName,
+                'price_per_ticket' => number_format($ticketPrice ?? 0, 2),
+                'total_price' => number_format(($ticketPrice ?? 0) * $ticket->quantity, 2),
+                'user' => $ticket->user ? (object) [
+                    'id' => $ticket->user->id,
+                    'name' => $ticket->user->name,
+                    'email' => $ticket->user->email,
+                ] : null,
+            ];
+
+            $pdf = Pdf::loadView('tickets.template', ['ticket' => $ticketData])->setPaper('a4', 'landscape');
+
+            return $pdf->download("ticket-{$ticketData->ticket_number}.pdf");
+        } catch (\Exception $e) {
+            abort(500, 'Failed to generate ticket. Please try again later.');
         }
     }
 }
