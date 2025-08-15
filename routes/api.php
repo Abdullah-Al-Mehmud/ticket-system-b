@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\TicketController;
@@ -29,6 +30,13 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::post('/ticket-verify', [TicketController::class, 'verifyTicket']);
 Route::post('/ticket-check', [TicketController::class, 'checkTicket']);
 
+
+// Mail Routes
+Route::post('/send-mail', [MailController::class, 'send'])->name('send.mail');
+
+// Ticket Download Route
+Route::get('/ticket/download/{id}', [TicketController::class, 'download'])->name('ticket.download');
+Route::view('/ticketssss', 'tickets.template');
 
 // Protected Routes
 Route::middleware(['auth:api'])->group(function () {
