@@ -7,7 +7,6 @@
 </head>
 
 <body style="margin:0;padding:16px;font-family:'Courier New', monospace;">
-
     <table
         style="width:100%;max-width:1024px;margin:0 auto;border:2px solid #d97706;border-radius:8px;background:#fff;">
         <!-- Header -->
@@ -96,11 +95,16 @@
                     style="font-size:12px;color:#d97706;border:1px solid #d97706;padding:2px 6px;border-radius:4px;margin:8px 0;">
                     #{{ $ticket->ticket_number }}</p>
                 <p style="font-size:12px;color:ticket_number#4b5563;margin:8px 0;">
-                    {{ \Carbon\Carbon::parse($ticket->event->start_date)->format('M d, Y') }}</p>
-                <div style="width:140px;height:140px;margin:16px auto;border:2px solid #e5e7eb;background:#000;">
-                    <!-- Replace with QR image -->
-                    {{-- <img src="data:image/png;base64,{{ $qrBase64 }}" alt="QR" style="width:100%;height:100%;"> --}}
+                    {{ \Carbon\Carbon::parse($ticket->event->start_date)->format('M d, Y') }}
+                </p>
+                <div style="width:200px;height:200px;margin:16px auto;border:2px solid;">
+                    <div style="">
+                        {!! $qrImage !!}
+                    </div>
                 </div>
+
+
+
                 <p style="font-size:14px;color:#4b5563;margin:0;">SCAN AT VENUE</p>
             </td>
         </tr>

@@ -10,8 +10,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TicketController extends Controller
 {
@@ -490,12 +492,67 @@ class TicketController extends Controller
                     'email' => $ticket->user->email,
                 ] : null,
             ];
+            $qrPayload = json_encode([
+                'ticket_id' => $ticketData->ticket_id,
+                'user_name' => $ticketData->user->name ?? '',
+                'event_id' => $ticketData->event->id ?? '',
+            ]);
 
-            $pdf = Pdf::loadView('tickets.template', ['ticket' => $ticketData])->setPaper('a4', 'landscape');
+            $qrImage = $this->generateFromPayload($qrPayload);
+            $ticket = $ticketData;
+            
 
-            return $pdf->download("ticket-{$ticketData->ticket_number}.pdf");
+            $pdf = Pdf::loadView('tickets.template', compact('ticket', 'qrImage'))->setPaper('a4', 'landscape');
+           
+            return $pdf->download('ticket_' . $ticketData->ticket_number . '.pdf');
         } catch (\Exception $e) {
-            abort(500, 'Failed to generate ticket. Please try again later.');
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to generate ticket PDF.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
+    public function generateFromPayload($qrPayload)
+    {
+        try {
+            // SVG QR code generate
+            $qrSvg = QrCode::format(format: 'png')->size(200)->generate($qrPayload);
+            // dd($qrSvg);
+
+            if (!$qrSvg) {
+                return response()->json([
+                    'message' => 'QR Code generation failed',
+                ], 500);
+            }
+
+            return $qrSvg; // Blade e {!! $qrImage !!} diye use korben
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return null;
+        }
+    }
+
+    // public function generateFromPayload($qrPayload)
+    // {
+    //     $filename = 'qr_' . time() . '_' . Str::random(6) . '.svg';
+    //     $path = 'public/uploads/' . $filename;
+
+    //     try {
+    //         // QR code generate to variable first
+    //         $qrContent = QrCode::format('svg')->size(200)->generate($qrPayload);
+    //         if (!$qrContent) {
+    //             return response()->json([
+    //                 'message' => 'QR Code generation failed',
+    //             ], 500);
+    //         }
+    //         // dd($qrContent);
+
+    //         file_put_contents(storage_path('app/' . $path), $qrContent);
+    //         $url = asset(str_replace('public/', 'storage/', $path));
+    //         return  $qrContent;
+    //     } catch (\Exception $e) {
+    //         return null;
+    //     }
+    // }
 }
