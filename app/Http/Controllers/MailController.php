@@ -39,99 +39,117 @@ class MailController extends Controller
     public function sendBookingEmail(Request $request)
     {
         $request->validate([
-            'ticket_id' => 'required|exists:tickets,id',
+            'ticket_id' => 'required|array',
+            'ticket_id.*' => 'exists:tickets,id',
         ]);
 
-        $id = $request->ticket_id;
+        $ticketIds = $request->ticket_id;
 
         try {
-            $ticket = Ticket::with([
+            $tickets = Ticket::with([
                 'ticketCategory:id,event_id,name,price',
                 'ticketCategory.event:id,title,location,start_date,end_date,category_id',
                 'ticketCategory.event.category:id,name',
                 'user:id,name,email',
-            ])->findOrFail($id);
+            ])->findOrFail($ticketIds); // This accepts array
 
-            $event = $ticket->ticketCategory?->event;
-            $ticketPrice = $ticket->ticketCategory?->price;
-            $ticketCategoryId = $ticket->ticketCategory?->id;
-            $ticketCategoryName = $ticket->ticketCategory?->name;
-
-            $ticketData = (object) [
-                'ticket_id' => $ticket->id,
-                'ticket_category_id' => $ticketCategoryId,
-                'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
-                'quantity' => $ticket->quantity,
-                'status' => $ticket->status,
-                'event' => $event ? (object) [
-                    'id' => $event->id,
-                    'title' => $event->title,
-                    'location' => $event->location,
-                    'start_date' => $event->start_date,
-                    'end_date' => $event->end_date,
-                    'category' => $event->category ? (object) ['name' => $event->category->name] : null,
-                ] : null,
-                'ticket_category_name' => $ticketCategoryName,
-                'price_per_ticket' => number_format($ticketPrice ?? 0, 2),
-                'total_price' => number_format(($ticketPrice ?? 0) * $ticket->quantity, 2),
-                'user' => $ticket->user ? (object) [
-                    'id' => $ticket->user->id,
-                    'name' => $ticket->user->name,
-                    'email' => $ticket->user->email,
-                ] : null,
-            ];
-
-            $qrPayload = json_encode([
-                'ticket_id' => $ticketData->ticket_id,
-                'user_name' => $ticketData->user->name ?? '',
-                'event_id' => $ticketData->event->id ?? '',
-            ], JSON_UNESCAPED_SLASHES);
-
-            $qrImage = $this->generateFromPayload($qrPayload);
-
-            if (!$qrImage) {
+            if ($tickets->isEmpty()) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'QR code generation failed.',
-                ], 500);
+                    'message' => 'No valid tickets found.',
+                ], 404);
             }
+            $groupedTickets = $tickets->groupBy('user.email');
 
-            $pdf = Pdf::loadView('tickets.BookingTicketTemplate', [
-                'ticket' => $ticketData,
-                'qrImage' => $qrImage,
-            ])->setPaper('a4', 'landscape');
+            $sentCount = 0;
 
-            $attachments = [
-                [
-                    'data' => $pdf->output(),
-                    'name' => "ticket_{$ticketData->ticket_number}.pdf",
-                    'mime' => 'application/pdf',
-                ],
-            ];
+            foreach ($groupedTickets as $email => $userTickets) {
+                $attachments = [];
+                $firstTicket = $userTickets->first();
 
-            Mail::to($ticketData->user->email)->send(
-                new SendMail(
-                    'Your Booking Ticket',
-                    '<p>Please find your booking ticket attached.</p>',
-                    true,
-                    $attachments
-                )
-            );
+                foreach ($userTickets as $ticket) {
+                    $event = $ticket->ticketCategory?->event;
+                    $ticketPrice = $ticket->ticketCategory?->price;
+                    $ticketCategoryName = $ticket->ticketCategory?->name;
+
+                    $ticketData = (object) [
+                        'ticket_id' => $ticket->id,
+                        'ticket_category_id' => $ticket->ticketCategory?->id,
+                        'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                        'quantity' => $ticket->quantity,
+                        'status' => $ticket->status,
+                        'event' => $event ? (object) [
+                            'id' => $event->id,
+                            'title' => $event->title,
+                            'location' => $event->location,
+                            'start_date' => $event->start_date,
+                            'end_date' => $event->end_date,
+                            'category' => $event->category ? (object) ['name' => $event->category->name] : null,
+                        ] : null,
+                        'ticket_category_name' => $ticketCategoryName,
+                        'price_per_ticket' => number_format($ticketPrice ?? 0, 2),
+                        'total_price' => number_format(($ticketPrice ?? 0) * $ticket->quantity, 2),
+                        'user' => $ticket->user ? (object) [
+                            'id' => $ticket->user->id,
+                            'name' => $ticket->user->name,
+                            'email' => $ticket->user->email,
+                        ] : null,
+                    ];
+
+                    // Generate QR Code
+                    $qrPayload = json_encode([
+                        'ticket_id' => $ticketData->ticket_id,
+                        'user_name' => $ticketData->user->name ?? '',
+                        'event_id' => $ticketData->event->id ?? '',
+                    ], JSON_UNESCAPED_SLASHES);
+
+                    $qrImage = $this->generateFromPayload($qrPayload);
+                    if (!$qrImage)
+                        continue; // Skip if QR fails
+
+                    // Generate PDF for this ticket
+                    $pdf = Pdf::loadView('tickets.BookingTicketTemplate', [
+                        'ticket' => $ticketData,
+                        'qrImage' => $qrImage,
+                    ])->setPaper('a4', 'landscape');
+
+                    // Add to attachments
+                    $attachments[] = [
+                        'data' => $pdf->output(),
+                        'name' => "ticket_{$ticketData->ticket_number}.pdf",
+                        'mime' => 'application/pdf',
+                    ];
+                }
+
+                // Only send if we have attachments
+                if (!empty($attachments)) {
+                    Mail::to($email)->send(
+                        new SendMail(
+                            'Your Booking Tickets',
+                            '<p>Please find your booking tickets attached.</p>',
+                            true,
+                            $attachments
+                        )
+                    );
+                    $sentCount++;
+                }
+            }
 
             return response()->json([
                 'status' => true,
-                'message' => 'Booking email sent successfully.',
+                'message' => "Booking email(s) sent successfully to {$sentCount} user(s).",
+                'sent_to' => $sentCount,
             ], 200);
 
         } catch (\Exception $e) {
-            Log::error('Failed to send booking email: ' . $e->getMessage(), [
-                'ticket_id' => $id ?? null,
+            Log::error('Failed to send booking emails: ' . $e->getMessage(), [
+                'ticket_ids' => $ticketIds ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to send email.',
+                'message' => 'Failed to send emails.',
                 'error' => $e->getMessage(),
             ], 500);
         }
