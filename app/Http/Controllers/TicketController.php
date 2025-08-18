@@ -501,7 +501,7 @@ class TicketController extends Controller
             $qrImage = $this->generateFromPayload($qrPayload);
             $ticket = $ticketData;
 
-            $pdf = Pdf::loadView('tickets.template', compact('ticket', 'qrImage'))->setPaper('a4', 'landscape');
+            $pdf = Pdf::loadView('tickets.BookingTicketTemplate', compact('ticket', 'qrImage'))->setPaper('a4', 'landscape');
 
             return $pdf->download('ticket_' . $ticketData->ticket_number . '.pdf');
         } catch (\Exception $e) {
