@@ -12,9 +12,6 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class MailController extends Controller
 {
-    /**
-     * Test email sending
-     */
     public function send()
     {
         try {
@@ -39,10 +36,6 @@ class MailController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Send booking confirmation email with ticket PDF and QR code
-     */
     public function sendBookingEmail(Request $request)
     {
         $request->validate([
@@ -64,7 +57,6 @@ class MailController extends Controller
             $ticketCategoryId = $ticket->ticketCategory?->id;
             $ticketCategoryName = $ticket->ticketCategory?->name;
 
-            // Format ticket data for view
             $ticketData = (object) [
                 'ticket_id' => $ticket->id,
                 'ticket_category_id' => $ticketCategoryId,
@@ -89,7 +81,6 @@ class MailController extends Controller
                 ] : null,
             ];
 
-            // Generate QR code payload
             $qrPayload = json_encode([
                 'ticket_id' => $ticketData->ticket_id,
                 'user_name' => $ticketData->user->name ?? '',
@@ -105,13 +96,11 @@ class MailController extends Controller
                 ], 500);
             }
 
-            // Load PDF from Blade view
             $pdf = Pdf::loadView('tickets.BookingTicketTemplate', [
                 'ticket' => $ticketData,
                 'qrImage' => $qrImage,
             ])->setPaper('a4', 'landscape');
 
-            // Prepare attachment
             $attachments = [
                 [
                     'data' => $pdf->output(),
@@ -120,7 +109,6 @@ class MailController extends Controller
                 ],
             ];
 
-            // Send email
             Mail::to($ticketData->user->email)->send(
                 new SendMail(
                     'Your Booking Ticket',
@@ -148,13 +136,6 @@ class MailController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Generate base64-encoded QR code from payload
-     *
-     * @param string $qrPayload
-     * @return string|null
-     */
     private function generateFromPayload($qrPayload)
     {
         try {
