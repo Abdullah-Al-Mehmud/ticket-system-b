@@ -99,7 +99,7 @@
                 </p>
                 <div style="width:200px;height:200px;margin:16px auto;border:2px solid;">
                     <div style="">
-                        {!! $qrImage !!}
+                        <img src="data:image/png;base64,{{ $qrImage }}" alt="QR Code" />
                     </div>
                 </div>
 

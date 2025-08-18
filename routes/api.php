@@ -36,7 +36,6 @@ Route::post('/send-mail', [MailController::class, 'send'])->name('send.mail');
 
 // Ticket Download Route
 Route::get('/ticket/download/{id}', [TicketController::class, 'download'])->name('ticket.download');
-Route::view('/ticketssss', 'tickets.template');
 
 // Protected Routes
 Route::middleware(['auth:api'])->group(function () {

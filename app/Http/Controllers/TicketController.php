@@ -481,7 +481,7 @@ class TicketController extends Controller
                     'location' => $event->location,
                     'start_date' => $event->start_date,
                     'end_date' => $event->end_date,
-                    'category' => $event->category ? (object)['name' => $event->category->name] : null,
+                    'category' => $event->category ? (object) ['name' => $event->category->name] : null,
                 ] : null,
                 'ticket_category_name' => $ticketCategoryName,
                 'price_per_ticket' => number_format($ticketPrice ?? 0, 2),
@@ -500,10 +500,9 @@ class TicketController extends Controller
 
             $qrImage = $this->generateFromPayload($qrPayload);
             $ticket = $ticketData;
-            
 
             $pdf = Pdf::loadView('tickets.template', compact('ticket', 'qrImage'))->setPaper('a4', 'landscape');
-           
+
             return $pdf->download('ticket_' . $ticketData->ticket_number . '.pdf');
         } catch (\Exception $e) {
             return response()->json([
@@ -516,17 +515,16 @@ class TicketController extends Controller
     public function generateFromPayload($qrPayload)
     {
         try {
-            // SVG QR code generate
-            $qrSvg = QrCode::format(format: 'png')->size(200)->generate($qrPayload);
-            // dd($qrSvg);
+            $qrPng = QrCode::format('svg')->size(200)->generate($qrPayload);
+            $qrImage = base64_encode($qrPng);
 
-            if (!$qrSvg) {
+            if (!$qrPng) {
                 return response()->json([
                     'message' => 'QR Code generation failed',
                 ], 500);
             }
 
-            return $qrSvg; // Blade e {!! $qrImage !!} diye use korben
+            return $qrImage;
         } catch (\Exception $e) {
             dd($e->getMessage());
             return null;
