@@ -526,7 +526,6 @@ class TicketController extends Controller
 
             return $qrImage;
         } catch (\Exception $e) {
-            dd($e->getMessage());
             return null;
         }
     }
