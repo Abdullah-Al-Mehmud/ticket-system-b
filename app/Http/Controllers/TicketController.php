@@ -100,7 +100,7 @@ class TicketController extends Controller
                 if ($userTicketsTotal + $validated['quantity'] > $ticketCategory->max_per_purchase) {
                     return response()->json([
                         'status' => false,
-                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category."
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this {$ticketCategory->name}."
                     ], 422);
                 }
             }
