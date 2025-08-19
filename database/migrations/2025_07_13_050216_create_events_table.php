@@ -13,7 +13,8 @@ return new class extends Migration {
         Schema::create('events', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');
-            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->uuid('category_id');
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->string('title');
             $table->text('event_description');
             $table->string('location');
