@@ -10,8 +10,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class TicketController extends Controller
 {
@@ -86,37 +88,46 @@ class TicketController extends Controller
                 ? $validated['user_id']
                 : $authUser->id;
 
-            $existingTicket = Ticket::where('user_id', $userId)
-                ->where('ticket_category_id', $validated['ticket_category_id'])
-                ->where('status', $validated['status'] ?? 'Confirmed')
-                ->first();
+            $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
 
-            if ($existingTicket) {
-                $existingTicket->quantity += $validated['quantity'];
-                $existingTicket->save();
-                $ticket = $existingTicket;
-            } else {
-                $ticket = Ticket::create([
-                    'user_id' => $userId,
-                    'ticket_category_id' => $validated['ticket_category_id'],
-                    'quantity' => $validated['quantity'],
-                    'status' => $validated['status'] ?? 'Confirmed',
-                ]);
+            //  Check total user tickets for this category (only if limit is set)
+            if ($ticketCategory->max_per_purchase !== null) {
+                $userTicketsTotal = Ticket::where('user_id', $userId)
+                    ->where('ticket_category_id', $validated['ticket_category_id'])
+                    ->where('status', 'Confirmed')
+                    ->sum('quantity');
+
+                if ($userTicketsTotal + $validated['quantity'] > $ticketCategory->max_per_purchase) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this {$ticketCategory->name}."
+                    ], 422);
+                }
             }
 
-            $TicketCategory = TicketCategory::find($validated['ticket_category_id']);
-            $TicketCategory->sold_quantity += $validated['quantity'];
-            $TicketCategory->save();
+
+            // Always create a new ticket, no merging with old one
+            $ticket = Ticket::create([
+                'user_id' => $userId,
+                'ticket_category_id' => $validated['ticket_category_id'],
+                'quantity' => $validated['quantity'],
+                'status' => $validated['status'] ?? 'Confirmed',
+            ]);
+
+            // Update sold quantity
+            $ticketCategory->sold_quantity += $validated['quantity'];
+            $ticketCategory->save();
 
             return response()->json([
                 'status' => true,
-                'message' => $existingTicket ? 'Ticket updated successfully' : 'Ticket created successfully',
+                'message' => 'Ticket created successfully',
                 'data' => $ticket
-            ], $existingTicket ? 200 : 201);
+            ], 201);
+
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Failed to create/update ticket', 'error' => $e->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to create ticket', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -140,7 +151,7 @@ class TicketController extends Controller
             $response = [
                 'ticket_id' => $ticket->id,
                 'ticket_category_id' => $ticket_category_id,
-                'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                'ticket_number' => $ticket->id,
                 'quantity' => $ticket->quantity,
                 'status' => $ticket->status,
                 'event' => [
@@ -202,9 +213,9 @@ class TicketController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
-            $ticket = Ticket::where('id', $id)->first();
 
-            // dd($ticket);
+            $ticket = Ticket::find($id);
+
             if (!$ticket) {
                 return response()->json(['status' => false, 'message' => 'Ticket not found'], 404);
             }
@@ -212,25 +223,47 @@ class TicketController extends Controller
             $oldQuantity = $ticket->quantity;
             $oldCategoryId = $ticket->ticket_category_id;
 
+            $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
 
+            // Check max_per_purchase limit (only if not null)
+            if (!is_null($ticketCategory->max_per_purchase)) {
+                $userTicketsTotal = Ticket::where('user_id', $ticket->user_id)
+                    ->where('ticket_category_id', $validated['ticket_category_id'])
+                    ->where('status', 'Confirmed')
+                    ->where('id', '!=', $ticket->id) // exclude current ticket
+                    ->sum('quantity');
+
+                $newTotal = $userTicketsTotal + $validated['quantity'];
+
+                if ($newTotal > $ticketCategory->max_per_purchase) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category."
+                    ], 422);
+                }
+            }
+
+            // Update ticket
             $ticket->ticket_category_id = $validated['ticket_category_id'];
             $ticket->quantity = $validated['quantity'];
             $ticket->status = $validated['status'] ?? $ticket->status;
             $ticket->save();
 
+            // Update sold_quantity in categories
             if ($oldCategoryId != $validated['ticket_category_id']) {
                 $oldCategory = TicketCategory::find($oldCategoryId);
-                $oldCategory->sold_quantity -= $oldQuantity;
-                $oldCategory->save();
+                if ($oldCategory) {
+                    $oldCategory->sold_quantity -= $oldQuantity;
+                    $oldCategory->save();
+                }
 
-                $newCategory = TicketCategory::find($validated['ticket_category_id']);
+                $newCategory = $ticketCategory;
                 $newCategory->sold_quantity += $validated['quantity'];
                 $newCategory->save();
             } else {
                 $difference = $validated['quantity'] - $oldQuantity;
-                $category = TicketCategory::find($validated['ticket_category_id']);
-                $category->sold_quantity += $difference;
-                $category->save();
+                $ticketCategory->sold_quantity += $difference;
+                $ticketCategory->save();
             }
 
             return response()->json([
@@ -238,6 +271,7 @@ class TicketController extends Controller
                 'message' => 'Ticket updated successfully',
                 'data' => $ticket
             ], 200);
+
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
@@ -470,7 +504,7 @@ class TicketController extends Controller
             $ticketData = (object) [
                 'ticket_id' => $ticket->id,
                 'ticket_category_id' => $ticketCategoryId,
-                'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                'ticket_number' => $ticket->id,
                 'quantity' => $ticket->quantity,
                 'status' => $ticket->status,
                 'event' => $event ? (object) [
@@ -479,7 +513,7 @@ class TicketController extends Controller
                     'location' => $event->location,
                     'start_date' => $event->start_date,
                     'end_date' => $event->end_date,
-                    'category' => $event->category ? (object)['name' => $event->category->name] : null,
+                    'category' => $event->category ? (object) ['name' => $event->category->name] : null,
                 ] : null,
                 'ticket_category_name' => $ticketCategoryName,
                 'price_per_ticket' => number_format($ticketPrice ?? 0, 2),
@@ -490,12 +524,64 @@ class TicketController extends Controller
                     'email' => $ticket->user->email,
                 ] : null,
             ];
+            $qrPayload = json_encode([
+                'ticket_id' => $ticketData->ticket_id,
+                'user_name' => $ticketData->user->name ?? '',
+                'event_id' => $ticketData->event->id ?? '',
+            ]);
 
-            $pdf = Pdf::loadView('tickets.template', ['ticket' => $ticketData])->setPaper('a4', 'landscape');
+            $qrImage = $this->generateFromPayload($qrPayload);
+            $ticket = $ticketData;
 
-            return $pdf->download("ticket-{$ticketData->ticket_number}.pdf");
+            $pdf = Pdf::loadView('tickets.BookingTicketTemplate', compact('ticket', 'qrImage'))->setPaper('a4', 'landscape');
+
+            return $pdf->download('ticket_' . $ticketData->ticket_number . '.pdf');
         } catch (\Exception $e) {
-            abort(500, 'Failed to generate ticket. Please try again later.');
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to generate ticket PDF.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
+    public function generateFromPayload($qrPayload)
+    {
+        try {
+            $qrPng = QrCode::format('svg')->size(200)->generate($qrPayload);
+            $qrImage = base64_encode($qrPng);
+
+            if (!$qrPng) {
+                return response()->json([
+                    'message' => 'QR Code generation failed',
+                ], 500);
+            }
+
+            return $qrImage;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    // public function generateFromPayload($qrPayload)
+    // {
+    //     $filename = 'qr_' . time() . '_' . Str::random(6) . '.svg';
+    //     $path = 'public/uploads/' . $filename;
+
+    //     try {
+    //         // QR code generate to variable first
+    //         $qrContent = QrCode::format('svg')->size(200)->generate($qrPayload);
+    //         if (!$qrContent) {
+    //             return response()->json([
+    //                 'message' => 'QR Code generation failed',
+    //             ], 500);
+    //         }
+    //         // dd($qrContent);
+
+    //         file_put_contents(storage_path('app/' . $path), $qrContent);
+    //         $url = asset(str_replace('public/', 'storage/', $path));
+    //         return  $qrContent;
+    //     } catch (\Exception $e) {
+    //         return null;
+    //     }
+    // }
 }

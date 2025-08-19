@@ -4,22 +4,23 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('ticket_categories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('event_id'); 
+            $table->foreign('event_id')->references('id')->on('events')->onDelete('cascade');
             $table->string('name');
             $table->decimal('price', 10, 2);
             $table->dateTime('sales_start')->nullable();
             $table->dateTime('sales_end')->nullable();
             $table->integer('total_quantity');
-            $table->integer('sold_quantity');
+            $table->integer('sold_quantity')->default(0);
+            $table->integer('max_per_purchase')->nullable()->default(null);
             $table->timestamps();
         });
     }
