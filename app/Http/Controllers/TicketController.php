@@ -88,37 +88,46 @@ class TicketController extends Controller
                 ? $validated['user_id']
                 : $authUser->id;
 
-            $existingTicket = Ticket::where('user_id', $userId)
-                ->where('ticket_category_id', $validated['ticket_category_id'])
-                ->where('status', $validated['status'] ?? 'Confirmed')
-                ->first();
+            $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
 
-            if ($existingTicket) {
-                $existingTicket->quantity += $validated['quantity'];
-                $existingTicket->save();
-                $ticket = $existingTicket;
-            } else {
-                $ticket = Ticket::create([
-                    'user_id' => $userId,
-                    'ticket_category_id' => $validated['ticket_category_id'],
-                    'quantity' => $validated['quantity'],
-                    'status' => $validated['status'] ?? 'Confirmed',
-                ]);
+            //  Check total user tickets for this category (only if limit is set)
+            if ($ticketCategory->max_per_purchase !== null) {
+                $userTicketsTotal = Ticket::where('user_id', $userId)
+                    ->where('ticket_category_id', $validated['ticket_category_id'])
+                    ->where('status', 'Confirmed')
+                    ->sum('quantity');
+
+                if ($userTicketsTotal + $validated['quantity'] > $ticketCategory->max_per_purchase) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category."
+                    ], 422);
+                }
             }
 
-            $TicketCategory = TicketCategory::find($validated['ticket_category_id']);
-            $TicketCategory->sold_quantity += $validated['quantity'];
-            $TicketCategory->save();
+
+            // Always create a new ticket, no merging with old one
+            $ticket = Ticket::create([
+                'user_id' => $userId,
+                'ticket_category_id' => $validated['ticket_category_id'],
+                'quantity' => $validated['quantity'],
+                'status' => $validated['status'] ?? 'Confirmed',
+            ]);
+
+            // Update sold quantity
+            $ticketCategory->sold_quantity += $validated['quantity'];
+            $ticketCategory->save();
 
             return response()->json([
                 'status' => true,
-                'message' => $existingTicket ? 'Ticket updated successfully' : 'Ticket created successfully',
+                'message' => 'Ticket created successfully',
                 'data' => $ticket
-            ], $existingTicket ? 200 : 201);
+            ], 201);
+
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Failed to create/update ticket', 'error' => $e->getMessage()], 500);
+            return response()->json(['status' => false, 'message' => 'Failed to create ticket', 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -204,9 +213,9 @@ class TicketController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
             ]);
-            $ticket = Ticket::where('id', $id)->first();
 
-            // dd($ticket);
+            $ticket = Ticket::find($id);
+
             if (!$ticket) {
                 return response()->json(['status' => false, 'message' => 'Ticket not found'], 404);
             }
@@ -214,25 +223,47 @@ class TicketController extends Controller
             $oldQuantity = $ticket->quantity;
             $oldCategoryId = $ticket->ticket_category_id;
 
+            $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
 
+            // Check max_per_purchase limit (only if not null)
+            if (!is_null($ticketCategory->max_per_purchase)) {
+                $userTicketsTotal = Ticket::where('user_id', $ticket->user_id)
+                    ->where('ticket_category_id', $validated['ticket_category_id'])
+                    ->where('status', 'Confirmed')
+                    ->where('id', '!=', $ticket->id) // exclude current ticket
+                    ->sum('quantity');
+
+                $newTotal = $userTicketsTotal + $validated['quantity'];
+
+                if ($newTotal > $ticketCategory->max_per_purchase) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category."
+                    ], 422);
+                }
+            }
+
+            // Update ticket
             $ticket->ticket_category_id = $validated['ticket_category_id'];
             $ticket->quantity = $validated['quantity'];
             $ticket->status = $validated['status'] ?? $ticket->status;
             $ticket->save();
 
+            // Update sold_quantity in categories
             if ($oldCategoryId != $validated['ticket_category_id']) {
                 $oldCategory = TicketCategory::find($oldCategoryId);
-                $oldCategory->sold_quantity -= $oldQuantity;
-                $oldCategory->save();
+                if ($oldCategory) {
+                    $oldCategory->sold_quantity -= $oldQuantity;
+                    $oldCategory->save();
+                }
 
-                $newCategory = TicketCategory::find($validated['ticket_category_id']);
+                $newCategory = $ticketCategory;
                 $newCategory->sold_quantity += $validated['quantity'];
                 $newCategory->save();
             } else {
                 $difference = $validated['quantity'] - $oldQuantity;
-                $category = TicketCategory::find($validated['ticket_category_id']);
-                $category->sold_quantity += $difference;
-                $category->save();
+                $ticketCategory->sold_quantity += $difference;
+                $ticketCategory->save();
             }
 
             return response()->json([
@@ -240,6 +271,7 @@ class TicketController extends Controller
                 'message' => 'Ticket updated successfully',
                 'data' => $ticket
             ], 200);
+
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
