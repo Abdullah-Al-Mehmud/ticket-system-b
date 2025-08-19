@@ -289,7 +289,7 @@ class AdminController extends Controller
             return response()->json([
                 'status'  => true,
                 'message' => 'User updated successfully',
-                'updated_fields' => $updatedFields
+                'data' => $updatedFields
             ]);
         } catch (ValidationException $e) {
             return response()->json([

@@ -92,7 +92,7 @@ class CategoryController extends Controller
             return response()->json(['status' => false, 'message' => 'Category not found'], 404);
         }
 
-        return response()->json(['status' => true, 'data' => $category]);
+        return response()->json(['status' => true, 'message' => 'Category show successfully', 'data' => $category], 200);
     }
     public function update(Request $request, $id)
     {

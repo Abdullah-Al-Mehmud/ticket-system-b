@@ -5,10 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MailController;
-use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\TicketController;
-use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,51 +24,26 @@ Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 
-// Verify Ticket
-Route::post('/ticket-verify', [TicketController::class, 'verifyTicket']);
-Route::post('/ticket-check', [TicketController::class, 'checkTicket']);
 
-
-// Mail Routes
-Route::post('/send-mail', [MailController::class, 'send'])->name('send.mail');
-
-Route::post('/send-bookingTicket-email', [MailController::class, 'sendBookingEmail']);
-
-// Ticket Download Route
-Route::get('/ticket/download/{id}', [TicketController::class, 'download'])->name('ticket.download');
-
-// Protected Routes
 Route::middleware(['auth:api'])->group(function () {
-    //Admin Only Permissions
+    //Admin Dashboard
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])
         ->middleware('permission:view admin dashboard');
 
-    // User Manage
+    // User Management CRUD
     Route::get('/user', [AdminController::class, 'index']);
-    Route::get('/user/dashboard', [UserController::class, 'dashboard']);
     Route::get('/user/{id}', [AdminController::class, 'show']);
     Route::post('/users', [AdminController::class, 'store']);
     Route::patch('/users/{id}', [AdminController::class, 'update']);
     Route::delete('/users/{id}', [AdminController::class, 'destroy']);
 
-    // Ticket Manage
-    Route::get('/ticket', [TicketController::class, 'index']);
-    Route::get('/tickets', [TicketController::class, 'myTickets']);
-    Route::get('/ticket/{id}', [TicketController::class, 'show']);
-    Route::post('/ticket', [TicketController::class, 'store']);
-    Route::patch('/ticket/{id}', [TicketController::class, 'update']);
-    Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
-
-    // Category Manage
+    // Category Management CRUD
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::patch('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-    // Organizer Permissions
-    Route::get('organizer/dashboard', [OrganizerController::class, 'dashboard']);
-
-    //Event Manage
+    //Event Management CRUD
     Route::get('/organizer-event', [EventController::class, 'myEvent']);
     Route::post('/event', [EventController::class, 'store']);
     Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
@@ -83,4 +56,21 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/ticket-category', [TicketCategoryController::class, 'store']);
     Route::patch('/ticket-category/{id}', [TicketCategoryController::class, 'update']);
     Route::delete('/ticket-category/{id}', [TicketCategoryController::class, 'destroy']);
+
+    // Ticket Management CRUD
+    Route::get('/ticket', [TicketController::class, 'index']);
+    Route::get('/tickets', [TicketController::class, 'myTickets']);
+    Route::get('/ticket/{id}', [TicketController::class, 'show']);
+    Route::post('/ticket', [TicketController::class, 'store']);
+    Route::patch('/ticket/{id}', [TicketController::class, 'update']);
+    Route::delete('/ticket/{id}', [TicketController::class, 'destroy']);
+    // Verify Ticket
+    Route::post('/ticket-verify', [TicketController::class, 'verifyTicket']);
+    Route::post('/ticket-check', [TicketController::class, 'checkTicket']);
+    // Ticket Download Route
+    Route::get('/ticket/download/{id}', [TicketController::class, 'download'])->name('ticket.download');
+    // Booking Ticket Email
+    Route::post('/send-bookingTicket-email', [MailController::class, 'sendBookingEmail']);
+    // Mail Test Routes
+    Route::post('/send-mail', [MailController::class, 'send'])->name('send.mail');
 });

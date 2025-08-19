@@ -15,7 +15,7 @@ class MailController extends Controller
     public function send()
     {
         try {
-            Mail::to('test@example.com')->send(
+            Mail::to('test@gmail.com')->send(
                 new SendMail(
                     'Test Subject',
                     'Hello! This is a test email.',

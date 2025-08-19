@@ -348,7 +348,7 @@ class EventController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'event_id' => 'required|integer|exists:events,id',
+                'event_id' => 'required|exists:events,id',
                 'user_id' => 'required|integer|exists:users,id',
             ]);
 
