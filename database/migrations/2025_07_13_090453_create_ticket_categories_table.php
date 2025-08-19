@@ -12,7 +12,8 @@ return new class extends Migration {
     {
         Schema::create('ticket_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->constrained('events')->onDelete('cascade');
+            $table->uuid('event_id'); 
+            $table->foreign('event_id')->references('id')->on('events')->onDelete('cascade');
             $table->string('name');
             $table->decimal('price', 10, 2);
             $table->dateTime('sales_start')->nullable();
