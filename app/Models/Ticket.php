@@ -27,7 +27,7 @@ class Ticket extends Model
     protected static function generateUniqueKey($length): string
     {
         $characters = "ABCDEFGHOPQRSTUYZ0123456IJKLMN789VWX";
-        $key = "TIC_";
+        $key = "TKT_";
 
         for ($i = 0; $i < $length; $i++) {
             $key .= $characters[random_int(0, strlen($characters) - 1)];

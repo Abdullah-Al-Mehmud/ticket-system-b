@@ -75,7 +75,7 @@ class MailController extends Controller
                     $ticketData = (object) [
                         'ticket_id' => $ticket->id,
                         'ticket_category_id' => $ticket->ticketCategory?->id,
-                        'ticket_number' => 'TKT-' . str_pad($ticket->id, 6, '0', STR_PAD_LEFT),
+                        'ticket_number' => $ticket->id,
                         'quantity' => $ticket->quantity,
                         'status' => $ticket->status,
                         'event' => $event ? (object) [
