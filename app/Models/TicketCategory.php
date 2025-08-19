@@ -14,6 +14,7 @@ class TicketCategory extends Model
         'sales_end',
         'total_quantity',
         'sold_quantity',
+        'max_per_purchase',
     ];
 
     public function event()

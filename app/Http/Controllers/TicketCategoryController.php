@@ -62,7 +62,8 @@ class TicketCategoryController extends Controller
             'sales_start' => 'nullable|date',
             'sales_end' => 'nullable|date|after_or_equal:sales_start',
             'total_quantity' => 'required|integer|min:0',
-            'sold_quantity' => 'required|integer|min:0',
+            'sold_quantity' => 'nullable|integer|min:0',
+            'max_per_purchase' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -129,6 +130,7 @@ class TicketCategoryController extends Controller
             'sales_end' => 'nullable|date|after_or_equal:sales_start',
             'total_quantity' => 'sometimes|integer|min:0',
             'sold_quantity' => 'sometimes|integer|min:0',
+            'max_per_purchase' => 'sometimes|integer|min:1',
         ]);
 
         if ($validator->fails()) {
