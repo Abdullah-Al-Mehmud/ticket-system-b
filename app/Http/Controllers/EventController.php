@@ -13,14 +13,13 @@ use Illuminate\Validation\ValidationException;
 
 class EventController extends Controller
 {
-
     public function index(Request $request)
     {
         try {
             $query = Event::with('category', 'organizers', 'creator', 'ticketCategories');
 
             if ($request->filled('search')) {
-                $query->where('title', 'like', '%' . $request->search . '%');
+                $query->where('title', 'like', '%'.$request->search.'%');
             }
 
             if ($request->filled('status')) {
@@ -32,9 +31,10 @@ class EventController extends Controller
             }
 
             if ($request->filled('date')) {
-                $query->whereDate('created_at', $request->date);
+                $query->whereDate('start_date', '<=', $request->date)
+                    ->whereDate('end_date', '>=', $request->date);
             }
-            if ($request->filled('category')) {
+            if ($request->filled('category') && strtolower($request->category) !== 'all') {
                 $query->where('category_id', $request->category);
             }
             if ($request->boolean('orderbyStatus')) {
@@ -80,23 +80,23 @@ class EventController extends Controller
         $user = Auth::guard('api')->user();
 
         $validator = Validator::make($request->all(), [
-            'title'             => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'event_description' => 'required|string',
-            'location'          => 'required|string',
-            'start_date'        => 'required|date',
-            'end_date'          => 'required|date|after_or_equal:start_date',
-            'privacy_policy'    => 'required|string',
-            'image_url'             => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
-            'status'            => 'nullable|in:Upcoming,Live,Done,Cancelled',
-            'category_id'       => 'required|exists:categories,id',
-            'created_by'        => 'sometimes|exists:users,id',
+            'location' => 'required|string',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'privacy_policy' => 'required|string',
+            'image_url' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+            'status' => 'nullable|in:Upcoming,Live,Done,Cancelled',
+            'category_id' => 'required|exists:categories,id',
+            'created_by' => 'sometimes|exists:users,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
-                'errors' => $validator->errors()->first()
+                'errors' => $validator->errors()->first(),
             ], 422);
         }
 
@@ -107,56 +107,54 @@ class EventController extends Controller
                 $createdBy = $request->created_by;
             }
 
-            if (!$user->hasRole('admin') && $request->filled('created_by')) {
+            if (! $user->hasRole('admin') && $request->filled('created_by')) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'You are not allowed to set created_by.'
+                    'message' => 'You are not allowed to set created_by.',
                 ], 403);
             }
             // Image Upload
             $imageUrl = null;
             if ($request->hasFile('image_url')) {
                 $image = $request->file('image_url');
-                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $filename = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
                 $path = $image->storeAs('uploads/events', $filename, 'public');
-                $imageUrl = 'storage/' . $path;
+                $imageUrl = 'storage/'.$path;
             }
 
             $event = Event::create([
-                'created_by'        => $createdBy,
-                'category_id'       => $request->category_id,
-                'title'             => $request->title,
+                'created_by' => $createdBy,
+                'category_id' => $request->category_id,
+                'title' => $request->title,
                 'event_description' => $request->event_description,
-                'location'          => $request->location,
-                'start_date'        => $request->start_date,
-                'end_date'          => $request->end_date,
-                'privacy_policy'    => $request->privacy_policy,
-                'image_url'         => $imageUrl,
-                'status'            => $request->status ?? 'Upcoming',
+                'location' => $request->location,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'privacy_policy' => $request->privacy_policy,
+                'image_url' => $imageUrl,
+                'status' => $request->status ?? 'Upcoming',
             ]);
-
 
             return response()->json([
                 'status' => true,
                 'message' => 'Event created successfully!',
-                'data' => $event
+                'data' => $event,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to create event. Please try again.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 
     public function show($id)
     {
         try {
             $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories', 'tickets'])->find($id);
 
-            if (!$event) {
+            if (! $event) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Event not found',
@@ -182,42 +180,39 @@ class EventController extends Controller
         $user = Auth::guard('api')->user();
         $event = Event::find($id);
 
-
-
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'status' => false,
-                'message' => 'Event not found.'
+                'message' => 'Event not found.',
             ], 404);
         }
 
-        if (!$user->hasRole('admin') && $event->created_by !== $user->id) {
+        if (! $user->hasRole('admin') && $event->created_by !== $user->id) {
             return response()->json([
                 'status' => false,
-                'message' => 'Unauthorized to update this event.'
+                'message' => 'Unauthorized to update this event.',
             ], 403);
         }
 
-
         $validator = Validator::make($request->all(), [
-            'title'             => 'sometimes|required|string|max:255',
+            'title' => 'sometimes|required|string|max:255',
             'event_description' => 'sometimes|required|string',
-            'location'          => 'sometimes|required|string',
-            'start_date'        => 'sometimes|required|date',
-            'end_date'          => 'sometimes|required|date|after_or_equal:start_date',
-            'privacy_policy'    => 'sometimes|required|string',
-            'image_url'         => 'sometimes|nullable|image|mimes:jpeg,png,jpg',
-            'status'            => 'sometimes|required|in:Upcoming,Live,Done,Cancelled',
-            'is_featured'          => 'sometimes|required|boolean',
-            'category_id'       => 'sometimes|required|exists:categories,id',
-            'created_by'        => 'prohibited',
+            'location' => 'sometimes|required|string',
+            'start_date' => 'sometimes|required|date',
+            'end_date' => 'sometimes|required|date|after_or_equal:start_date',
+            'privacy_policy' => 'sometimes|required|string',
+            'image_url' => 'sometimes|nullable|image|mimes:jpeg,png,jpg',
+            'status' => 'sometimes|required|in:Upcoming,Live,Done,Cancelled',
+            'is_featured' => 'sometimes|required|boolean',
+            'category_id' => 'sometimes|required|exists:categories,id',
+            'created_by' => 'prohibited',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation errors',
-                'errors' => $validator->errors()->first()
+                'errors' => $validator->errors()->first(),
             ], 422);
         }
 
@@ -231,7 +226,7 @@ class EventController extends Controller
                 'privacy_policy',
                 'status',
                 'is_featured',
-                'category_id'
+                'category_id',
             ]);
 
             if ($request->hasFile('image_url')) {
@@ -240,10 +235,10 @@ class EventController extends Controller
                 }
 
                 $image = $request->file('image_url');
-                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
+                $filename = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
                 $path = $image->storeAs('uploads/events', $filename, 'public');
 
-                $updateData['image_url'] = 'storage/' . $path;
+                $updateData['image_url'] = 'storage/'.$path;
             }
 
             $event->update($updateData);
@@ -251,27 +246,25 @@ class EventController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Event updated successfully!',
-                'data' => $event
+                'data' => $event,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to update event.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 
     public function destroy($id)
     {
         $event = Event::find($id);
 
-        if (!$event) {
+        if (! $event) {
             return response()->json([
                 'status' => false,
-                'message' => 'Event not found'
+                'message' => 'Event not found',
             ], 404);
         }
 
@@ -287,13 +280,13 @@ class EventController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'Event and associated image deleted successfully'
+                'message' => 'Event and associated image deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to delete event. An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -306,17 +299,17 @@ class EventController extends Controller
 
             $userId = $requestedUserId ?: $authUserId;
 
-            if (!$userId) {
+            if (! $userId) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Authentication or valid user_id is required to view events.'
+                    'message' => 'Authentication or valid user_id is required to view events.',
                 ], 401);
             }
 
             $perPage = (int) $request->query('count', 10);
             $page = (int) $request->query('page', 1);
 
-            $events = Event::with(['category', 'organizers','creator'])
+            $events = Event::with(['category', 'organizers', 'creator'])
                 ->whereHas('organizers', function ($query) use ($userId) {
                     $query->where('user_id', $userId);
                 })
@@ -341,9 +334,6 @@ class EventController extends Controller
         }
     }
 
-
-
-
     public function assignOrganizers(Request $request)
     {
         try {
@@ -366,7 +356,7 @@ class EventController extends Controller
             $userId = $validated['user_id'];
 
             $event = Event::find($eventId);
-            if (!$event) {
+            if (! $event) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Event not found.',
