@@ -19,7 +19,7 @@ class EventController extends Controller
             $query = Event::with('category', 'organizers', 'creator', 'ticketCategories');
 
             if ($request->filled('search')) {
-                $query->where('title', 'like', '%'.$request->search.'%');
+                $query->where('title', 'like', '%' . $request->search . '%');
             }
 
             if ($request->filled('status')) {
@@ -117,9 +117,9 @@ class EventController extends Controller
             $imageUrl = null;
             if ($request->hasFile('image_url')) {
                 $image = $request->file('image_url');
-                $filename = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
                 $path = $image->storeAs('uploads/events', $filename, 'public');
-                $imageUrl = 'storage/'.$path;
+                $imageUrl = 'storage/' . $path;
             }
 
             $event = Event::create([
@@ -152,6 +152,7 @@ class EventController extends Controller
     public function show($id)
     {
         try {
+            /** @var ?Event $event */
             $event = Event::with(['organizers', 'creator', 'category', 'ticketCategories', 'tickets'])->find($id);
 
             if (! $event) {
@@ -178,6 +179,7 @@ class EventController extends Controller
     public function update(Request $request, $id)
     {
         $user = Auth::guard('api')->user();
+        /** @var ?Event $event */
         $event = Event::find($id);
 
         if (! $event) {
@@ -235,10 +237,10 @@ class EventController extends Controller
                 }
 
                 $image = $request->file('image_url');
-                $filename = time().'_'.Str::random(10).'.'.$image->getClientOriginalExtension();
+                $filename = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
                 $path = $image->storeAs('uploads/events', $filename, 'public');
 
-                $updateData['image_url'] = 'storage/'.$path;
+                $updateData['image_url'] = 'storage/' . $path;
             }
 
             $event->update($updateData);
@@ -259,6 +261,7 @@ class EventController extends Controller
 
     public function destroy($id)
     {
+        /** @var ?Event $event */
         $event = Event::find($id);
 
         if (! $event) {
@@ -355,6 +358,7 @@ class EventController extends Controller
             $eventId = $validated['event_id'];
             $userId = $validated['user_id'];
 
+            /** @var ?Event $event */
             $event = Event::find($eventId);
             if (! $event) {
                 return response()->json([

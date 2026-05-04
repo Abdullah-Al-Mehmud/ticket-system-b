@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\TicketCategoryController;
@@ -19,14 +20,17 @@ Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware(['auth:api'])->post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Email Verification Routes
+Route::get('/email/verify/{token}', [EmailVerificationController::class, 'verify']);
+Route::post('/email/resend', [EmailVerificationController::class, 'resend']);
+
 // Public Event Routes
 Route::get('/event', [EventController::class, 'index']);
 Route::get('/event/{id}', [EventController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
 
-
 Route::middleware(['auth:api'])->group(function () {
-    //Admin Dashboard
+    // Admin Dashboard
     Route::get('admin/dashboard', [AdminController::class, 'dashboard'])
         ->middleware('permission:view admin dashboard');
 
@@ -43,14 +47,14 @@ Route::middleware(['auth:api'])->group(function () {
     Route::patch('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 
-    //Event Management CRUD
+    // Event Management CRUD
     Route::get('/organizer-event', [EventController::class, 'myEvent']);
     Route::post('/event', [EventController::class, 'store']);
     Route::post('/events/assign-organizers', [EventController::class, 'assignOrganizers']);
     Route::patch('/event/{id}', [EventController::class, 'update']);
     Route::delete('/event/{id}', [EventController::class, 'destroy']);
 
-    //Ticket Category CRUD
+    // Ticket Category CRUD
     Route::get('/ticket-category', [TicketCategoryController::class, 'index']);
     Route::get('/ticket-category/{id}', [TicketCategoryController::class, 'show']);
     Route::post('/ticket-category', [TicketCategoryController::class, 'store']);
