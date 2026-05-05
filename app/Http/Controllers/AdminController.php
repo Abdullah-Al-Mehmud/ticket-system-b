@@ -242,8 +242,9 @@ class AdminController extends Controller
                 'name'     => 'sometimes|string|max:255',
                 'email'    => 'sometimes|string|email|unique:users,email,' . $user->id,
                 'role'     => 'sometimes|in:user,admin',
-                'password' => 'sometimes|string|min:6|confirmed',
-                'image_url' => 'sometimes|nullable|image|mimes:jpg,jpeg,png',
+                'previousPassword' => 'sometimes|string|min:6',
+                'newPassword' => 'sometimes|string|min:6',
+                'image_url' => 'sometimes|nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
 
             $updatedFields = [];
@@ -258,8 +259,17 @@ class AdminController extends Controller
                 $updatedFields['email'] = $user->email;
             }
 
-            if (!empty($validated['password'])) {
-                $user->password = Hash::make($validated['password']);
+            if (isset($validated['previousPassword']) && isset($validated['newPassword'])) {
+                // Check if previousPassword matches the current password in database
+                if (!Hash::check($validated['previousPassword'], $user->password)) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'Previous password is incorrect',
+                    ], 422);
+                }
+
+                // Update password with newPassword
+                $user->password = Hash::make($validated['newPassword']);
                 $updatedFields['password'] = '********';
             }
             if ($request->hasFile('image_url')) {
@@ -295,7 +305,7 @@ class AdminController extends Controller
             return response()->json([
                 'status'  => false,
                 'message' => 'Validation failed',
-                'errors'  => $e->validator->errors()->first()
+                'error'  => $e->validator->errors()->first()
             ], 422);
         } catch (\Exception $e) {
             return response()->json([

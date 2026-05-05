@@ -87,7 +87,8 @@ class AuthController extends Controller
 
         $user = Auth::guard('api')->user();
 
-        if (! $user->email_verified_at) {
+        // Check email verification only for users, not for admins
+        if ($user->hasRole('user') && ! $user->email_verified_at) {
             Auth::guard('api')->logout();
 
             return response()->json([
