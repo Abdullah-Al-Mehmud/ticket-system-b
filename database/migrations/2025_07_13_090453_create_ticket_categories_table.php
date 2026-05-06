@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -12,8 +13,10 @@ return new class extends Migration {
     {
         Schema::create('ticket_categories', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('event_id'); 
+            $table->uuid('event_id');
             $table->foreign('event_id')->references('id')->on('events')->onDelete('cascade');
+            $table->uuid('ticket_type_id')->nullable();
+            $table->foreign('ticket_type_id')->references('id')->on('ticket_types')->onDelete('set null');
             $table->string('name');
             $table->decimal('price', 10, 2);
             $table->dateTime('sales_start')->nullable();

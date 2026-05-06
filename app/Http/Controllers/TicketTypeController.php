@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TicketCategory;
+use App\Models\TicketType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class TicketCategoryController extends Controller
+class TicketTypeController extends Controller
 {
     public function index(Request $request)
     {
@@ -16,32 +16,32 @@ class TicketCategoryController extends Controller
             $count = (int) $request->query('count', 10);
             $search = $request->query('search');
 
-            $query = TicketCategory::with('event', 'ticketType')->orderByDesc('id');
+            $query = TicketType::orderByDesc('id');
 
             if ($search) {
                 $query->where('name', 'like', "%{$search}%");
             }
 
             if ($getAll) {
-                $ticketCategories = $query->get();
+                $ticketTypes = $query->get();
 
                 return response()->json([
                     'status' => true,
-                    'message' => 'Ticket categories retrieved successfully',
-                    'data' => $ticketCategories,
-                    'total' => $ticketCategories->count(),
+                    'message' => 'Ticket types retrieved successfully',
+                    'data' => $ticketTypes,
+                    'total' => $ticketTypes->count(),
                 ]);
             }
 
-            $ticketCategories = $query->paginate($count, ['*'], 'page', $page);
+            $ticketTypes = $query->paginate($count, ['*'], 'page', $page);
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket categories retrieved successfully',
-                'data' => $ticketCategories->items(),
-                'total' => $ticketCategories->total(),
-                'current_page' => $ticketCategories->currentPage(),
-                'last_page' => $ticketCategories->lastPage(),
+                'message' => 'Ticket types retrieved successfully',
+                'data' => $ticketTypes->items(),
+                'total' => $ticketTypes->total(),
+                'current_page' => $ticketTypes->currentPage(),
+                'last_page' => $ticketTypes->lastPage(),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -55,15 +55,9 @@ class TicketCategoryController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'event_id' => 'required|exists:events,id',
-            'ticket_type_id' => 'nullable|exists:ticket_types,id',
             'name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'sales_start' => 'nullable|date',
-            'sales_end' => 'nullable|date|after_or_equal:sales_start',
-            'total_quantity' => 'required|integer|min:0',
-            'sold_quantity' => 'nullable|integer|min:0',
-            'max_per_purchase' => 'nullable|integer|min:1',
+            'description' => 'nullable|string',
+            'status' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -75,17 +69,17 @@ class TicketCategoryController extends Controller
         }
 
         try {
-            $category = TicketCategory::create($validator->validated());
+            $ticketType = TicketType::create($validator->validated());
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket category created successfully',
-                'data' => $category,
+                'message' => 'Ticket type created successfully',
+                'data' => $ticketType,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to create ticket category. Please try again.',
+                'message' => 'Failed to create ticket type. Please try again.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -94,24 +88,24 @@ class TicketCategoryController extends Controller
     public function show($id)
     {
         try {
-            $category = TicketCategory::with('event', 'ticketType', 'tickets')->find($id);
+            $ticketType = TicketType::with('ticketCategories')->find($id);
 
-            if (! $category) {
+            if (! $ticketType) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket category not found.',
+                    'message' => 'Ticket type not found.',
                 ], 404);
             }
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket category retrieved successfully',
-                'data' => $category,
+                'message' => 'Ticket type retrieved successfully',
+                'data' => $ticketType,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to retrieve ticket category.',
+                'message' => 'Failed to retrieve ticket type.',
                 'error' => config('app.debug') ? $e->getMessage() : 'Server Error',
             ], 500);
         }
@@ -120,15 +114,9 @@ class TicketCategoryController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'event_id' => 'sometimes|exists:events,id',
-            'ticket_type_id' => 'nullable|exists:ticket_types,id',
             'name' => 'sometimes|string|max:255',
-            'price' => 'sometimes|numeric|min:0',
-            'sales_start' => 'nullable|date',
-            'sales_end' => 'nullable|date|after_or_equal:sales_start',
-            'total_quantity' => 'sometimes|integer|min:0',
-            'sold_quantity' => 'sometimes|integer|min:0',
-            'max_per_purchase' => 'sometimes|integer|min:1',
+            'description' => 'nullable|string',
+            'status' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -140,26 +128,26 @@ class TicketCategoryController extends Controller
         }
 
         try {
-            $category = TicketCategory::find($id);
+            $ticketType = TicketType::find($id);
 
-            if (! $category) {
+            if (! $ticketType) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket category not found.',
+                    'message' => 'Ticket type not found.',
                 ], 404);
             }
 
-            $category->update($validator->validated());
+            $ticketType->update($validator->validated());
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket category updated successfully',
-                'data' => $category,
+                'message' => 'Ticket type updated successfully',
+                'data' => $ticketType,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to update ticket category. Please try again.',
+                'message' => 'Failed to update ticket type. Please try again.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -168,26 +156,26 @@ class TicketCategoryController extends Controller
     public function destroy($id)
     {
         try {
-            $category = TicketCategory::find($id);
+            $ticketType = TicketType::find($id);
 
-            if (! $category) {
+            if (! $ticketType) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket category not found.',
+                    'message' => 'Ticket type not found.',
                 ], 404);
             }
 
-            $category->delete();
+            $ticketType->delete();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket category deleted successfully.',
+                'message' => 'Ticket type deleted successfully.',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Failed to delete ticket category.',
-                'error' => $e->getMessage(),
+                'message' => 'Failed to delete ticket type.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Server Error',
             ], 500);
         }
     }

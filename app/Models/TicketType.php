@@ -4,19 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class TicketCategory extends Model
+class TicketType extends Model
 {
-    protected $fillable = [
-        'event_id',
-        'ticket_type_id',
-        'name',
-        'price',
-        'sales_start',
-        'sales_end',
-        'total_quantity',
-        'sold_quantity',
-        'max_per_purchase',
-    ];
+    protected $fillable = ['name', 'description', 'status'];
 
     public $incrementing = false;
 
@@ -34,12 +24,11 @@ class TicketCategory extends Model
     protected static function generateUniqueKey($length): string
     {
         $characters = 'ABCDEFGHOPQRSTUYZ0123456IJKLMN789VWX';
-        $key = 'TICAT_';
+        $key = 'TITYPE_';
 
         for ($i = 0; $i < $length; $i++) {
             $key .= $characters[random_int(0, strlen($characters) - 1)];
         }
-        // Ensure the key is unique
         while (static::where('id', $key)->exists()) {
             $key .= $characters[random_int(0, strlen($characters) - 1)];
         }
@@ -47,18 +36,8 @@ class TicketCategory extends Model
         return $key;
     }
 
-    public function event()
+    public function ticketCategories()
     {
-        return $this->belongsTo(Event::class);
-    }
-
-    public function ticketType()
-    {
-        return $this->belongsTo(TicketType::class);
-    }
-
-    public function tickets()
-    {
-        return $this->hasMany(Ticket::class);
+        return $this->hasMany(TicketCategory::class);
     }
 }

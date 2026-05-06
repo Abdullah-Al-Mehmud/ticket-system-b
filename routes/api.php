@@ -8,6 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\MailController;
 use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketTypeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -60,6 +61,13 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/ticket-category', [TicketCategoryController::class, 'store']);
     Route::patch('/ticket-category/{id}', [TicketCategoryController::class, 'update']);
     Route::delete('/ticket-category/{id}', [TicketCategoryController::class, 'destroy']);
+
+    // Ticket Type CRUD
+    Route::get('/ticket-type', [TicketTypeController::class, 'index']);
+    Route::get('/ticket-type/{id}', [TicketTypeController::class, 'show']);
+    Route::post('/ticket-type', [TicketTypeController::class, 'store']);
+    Route::patch('/ticket-type/{id}', [TicketTypeController::class, 'update']);
+    Route::delete('/ticket-type/{id}', [TicketTypeController::class, 'destroy']);
 
     // Ticket Management CRUD
     Route::get('/ticket', [TicketController::class, 'index']);
