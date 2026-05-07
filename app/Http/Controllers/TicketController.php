@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Coupon;
 use App\Models\Event;
 use App\Models\EventOrganizer;
 use App\Models\Ticket;
@@ -29,7 +30,7 @@ class TicketController extends Controller
             $query = Ticket::with([
                 'user',
                 'ticketCategory',
-                'ticketCategory.event'
+                'ticketCategory.event',
             ])->orderByDesc('id');
 
             if ($status) {
@@ -43,6 +44,7 @@ class TicketController extends Controller
             }
             if ($getAll) {
                 $tickets = $query->get();
+
                 return response()->json([
                     'status' => true,
                     'message' => 'All tickets retrieved successfully',
@@ -65,12 +67,10 @@ class TicketController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Error fetching tickets',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 
     public function store(Request $request)
     {
@@ -82,6 +82,7 @@ class TicketController extends Controller
                 'quantity' => 'required|integer|min:1',
                 'status' => 'sometimes|in:Confirmed,Cancelled,Refunded',
                 'user_id' => 'sometimes|exists:users,id',
+                'coupon_code' => 'nullable|string',
             ]);
 
             $userId = isset($validated['user_id']) && $authUser->hasRole('admin')
@@ -89,6 +90,25 @@ class TicketController extends Controller
                 : $authUser->id;
 
             $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
+            $originalAmount = $ticketCategory->price * $validated['quantity'];
+            $discountAmount = 0;
+            $couponCode = null;
+
+            if (! empty($validated['coupon_code'])) {
+                $couponValidation = $this->validateCouponForPurchase($validated['coupon_code'], $originalAmount);
+
+                if (! $couponValidation['status']) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => $couponValidation['message'],
+                    ], 400);
+                }
+
+                $discountAmount = $couponValidation['discount_amount'];
+                $couponCode = strtoupper($validated['coupon_code']);
+            }
+
+            $finalAmount = $originalAmount - $discountAmount;
 
             //  Check total user tickets for this category (only if limit is set)
             if ($ticketCategory->max_per_purchase !== null) {
@@ -100,17 +120,20 @@ class TicketController extends Controller
                 if ($userTicketsTotal + $validated['quantity'] > $ticketCategory->max_per_purchase) {
                     return response()->json([
                         'status' => false,
-                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this {$ticketCategory->name}."
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this {$ticketCategory->name}.",
                     ], 422);
                 }
             }
-
 
             // Always create a new ticket, no merging with old one
             $ticket = Ticket::create([
                 'user_id' => $userId,
                 'ticket_category_id' => $validated['ticket_category_id'],
                 'quantity' => $validated['quantity'],
+                'coupon_code' => $couponCode,
+                'original_amount' => $originalAmount,
+                'discount_applied' => $discountAmount,
+                'final_amount' => $finalAmount,
                 'status' => $validated['status'] ?? 'Confirmed',
             ]);
 
@@ -118,19 +141,25 @@ class TicketController extends Controller
             $ticketCategory->sold_quantity += $validated['quantity'];
             $ticketCategory->save();
 
+            // Increment coupon used_count if applied
+            if ($couponCode) {
+                $coupon = Coupon::where('code', $couponCode)->first();
+                if ($coupon) {
+                    $coupon->increment('used_count');
+                }
+            }
+
             return response()->json([
                 'status' => true,
                 'message' => 'Ticket created successfully',
-                'data' => $ticket
+                'data' => $ticket,
             ], 201);
-
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => 'Failed to create ticket', 'error' => $e->getMessage()], 500);
         }
     }
-
 
     public function show($id)
     {
@@ -148,6 +177,19 @@ class TicketController extends Controller
             $ticket_category_id = $ticket->ticketCategory?->id;
             $ticket_category_name = $ticket->ticketCategory?->name;
 
+            // Get coupon details if coupon code exists
+            $couponData = null;
+            if ($ticket->coupon_code) {
+                $coupon = Coupon::where('code', $ticket->coupon_code)->first();
+                if ($coupon) {
+                    $couponData = [
+                        'code' => $coupon->code,
+                        'discount_type' => $coupon->discount_type,
+                        'discount_value' => $coupon->discount_value,
+                    ];
+                }
+            }
+
             $response = [
                 'ticket_id' => $ticket->id,
                 'ticket_category_id' => $ticket_category_id,
@@ -161,12 +203,16 @@ class TicketController extends Controller
                     'start_date' => $event?->start_date,
                     'end_date' => $event?->end_date,
                     'category' => [
-                        'name' => $event?->category?->name
+                        'name' => $event?->category?->name,
                     ],
                 ],
                 'ticket_category_name' => $ticket_category_name,
                 'price_per_ticket' => number_format($ticketPrice, 2),
-                'total_price' => number_format($ticketPrice * $ticket->quantity, 2),
+                'original_amount' => number_format($ticket->original_amount, 2),
+                'discount_applied' => number_format($ticket->discount_applied, 2),
+
+                'final_amount' => number_format($ticket->final_amount, 2),
+                'coupon' => $couponData,
                 'user' => [
                     'id' => $ticket->user?->id,
                     'name' => $ticket->user?->name,
@@ -177,34 +223,28 @@ class TicketController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Ticket data retrieved successfully.',
-                'data' => $response
+                'data' => $response,
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Ticket not found.'
+                'message' => 'Ticket not found.',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Something went wrong.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
-
-
-
-
 
     public function update(Request $request, $id)
     {
         try {
             $user = Auth::guard('api')->user();
 
-            if (!$user->hasRole('admin')) {
+            if (! $user->hasRole('admin')) {
                 return response()->json(['status' => false, 'message' => 'Unauthorized. Only admins can update tickets.'], 403);
             }
 
@@ -216,7 +256,7 @@ class TicketController extends Controller
 
             $ticket = Ticket::find($id);
 
-            if (!$ticket) {
+            if (! $ticket) {
                 return response()->json(['status' => false, 'message' => 'Ticket not found'], 404);
             }
 
@@ -226,7 +266,7 @@ class TicketController extends Controller
             $ticketCategory = TicketCategory::findOrFail($validated['ticket_category_id']);
 
             // Check max_per_purchase limit (only if not null)
-            if (!is_null($ticketCategory->max_per_purchase)) {
+            if (! is_null($ticketCategory->max_per_purchase)) {
                 $userTicketsTotal = Ticket::where('user_id', $ticket->user_id)
                     ->where('ticket_category_id', $validated['ticket_category_id'])
                     ->where('status', 'Confirmed')
@@ -238,7 +278,7 @@ class TicketController extends Controller
                 if ($newTotal > $ticketCategory->max_per_purchase) {
                     return response()->json([
                         'status' => false,
-                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category."
+                        'message' => "You cannot purchase more than {$ticketCategory->max_per_purchase} tickets for this category.",
                     ], 422);
                 }
             }
@@ -269,9 +309,8 @@ class TicketController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Ticket updated successfully',
-                'data' => $ticket
+                'data' => $ticket,
             ], 200);
-
         } catch (ValidationException $e) {
             return response()->json(['status' => false, 'message' => $e->validator->errors()->first()], 422);
         } catch (\Exception $e) {
@@ -279,27 +318,23 @@ class TicketController extends Controller
         }
     }
 
-
     public function destroy($id)
     {
         $ticket = Ticket::find($id);
 
-
-        if (!$ticket) {
+        if (! $ticket) {
             return response()->json([
                 'status' => false,
-                'message' => 'Ticket not found'
+                'message' => 'Ticket not found',
             ], 404);
         }
-
 
         try {
             $ticket->delete();
 
-
             return response()->json([
                 'status' => true,
-                'message' => 'Ticket deleted successfully'
+                'message' => 'Ticket deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             // Optional: Log the error for debugging purposes
@@ -308,7 +343,7 @@ class TicketController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to delete ticket. An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -320,10 +355,10 @@ class TicketController extends Controller
             $authUser = Auth::guard('api')->user();
             $userId = $requestedUserId ?: ($authUser ? $authUser->id : null);
 
-            if (!$userId) {
+            if (! $userId) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Authentication or valid user_id is required to view tickets.'
+                    'message' => 'Authentication or valid user_id is required to view tickets.',
                 ], 401);
             }
 
@@ -369,7 +404,7 @@ class TicketController extends Controller
                 ->where('user_id', $loggedInUser->id)
                 ->exists();
 
-            if (!$isOrganizer) {
+            if (! $isOrganizer) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You are not authorized to check tickets for this event.',
@@ -386,7 +421,7 @@ class TicketController extends Controller
                 })
                 ->first();
 
-            if (!$ticket) {
+            if (! $ticket) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Ticket not found for the given user and event.',
@@ -417,7 +452,6 @@ class TicketController extends Controller
         }
     }
 
-
     public function verifyTicket(Request $request)
     {
         try {
@@ -425,13 +459,13 @@ class TicketController extends Controller
             $validatedData = $request->validate([
                 'user_name' => 'required',
                 'event_id' => 'required',
-                'ticket_id' => 'required'
+                'ticket_id' => 'required',
             ]);
             $isOrganizer = EventOrganizer::where('event_id', $validatedData['event_id'])
                 ->where('user_id', $loggedInUser->id)
                 ->exists();
 
-            if (!$isOrganizer) {
+            if (! $isOrganizer) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You are not authorized to check tickets for this event.',
@@ -445,17 +479,17 @@ class TicketController extends Controller
                 })
                 ->first();
 
-            if (!$ticket) {
+            if (! $ticket) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket not found or does not belong to this event.'
+                    'message' => 'Ticket not found or does not belong to this event.',
                 ], 404);
             }
 
             if ($ticket->is_verify) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Ticket has already been verified.'
+                    'message' => 'Ticket has already been verified.',
                 ], 400);
             }
 
@@ -470,22 +504,23 @@ class TicketController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Ticket successfully verified.',
-                'ticket' => $ticketData
+                'ticket' => $ticketData,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'Validation failed.',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
                 'message' => 'An unexpected error occurred.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
     public function download($id)
     {
         try {
@@ -540,17 +575,18 @@ class TicketController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Failed to generate ticket PDF.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
     public function generateFromPayload($qrPayload)
     {
         try {
             $qrPng = QrCode::format('svg')->size(200)->generate($qrPayload);
             $qrImage = base64_encode($qrPng);
 
-            if (!$qrPng) {
+            if (! $qrPng) {
                 return response()->json([
                     'message' => 'QR Code generation failed',
                 ], 500);
@@ -584,4 +620,53 @@ class TicketController extends Controller
     //         return null;
     //     }
     // }
+
+    private function validateCouponForPurchase(string $code, int $orderAmount): array
+    {
+        $coupon = Coupon::where('code', strtoupper($code))->first();
+
+        if (! $coupon) {
+            return ['status' => false, 'message' => 'Invalid coupon code. Please check and try again.'];
+        }
+
+        if (! $coupon->is_active) {
+            return ['status' => false, 'message' => 'This coupon is no longer active.'];
+        }
+
+        $now = now();
+        if ($coupon->valid_from && $now->lt($coupon->valid_from)) {
+            return ['status' => false, 'message' => 'This coupon is not yet valid.'];
+        }
+
+        if ($coupon->valid_until && $now->gt($coupon->valid_until)) {
+            return ['status' => false, 'message' => 'This coupon has expired.'];
+        }
+
+        if ($coupon->max_uses !== null && $coupon->used_count >= $coupon->max_uses) {
+            return ['status' => false, 'message' => 'This coupon has reached its maximum usage limit.'];
+        }
+
+        if ($coupon->min_purchase_amount !== null && $orderAmount < $coupon->min_purchase_amount) {
+            return [
+                'status' => false,
+                'message' => 'Minimum purchase amount of ৳' . number_format($coupon->min_purchase_amount) . ' required to use this coupon.',
+            ];
+        }
+
+        $discountAmount = 0;
+        if ($coupon->discount_type === 'percentage') {
+            $discountAmount = ($orderAmount * $coupon->discount_value) / 100;
+        } else {
+            $discountAmount = $coupon->discount_value;
+        }
+
+        if ($discountAmount > $orderAmount) {
+            $discountAmount = $orderAmount;
+        }
+
+        return [
+            'status' => true,
+            'discount_amount' => $discountAmount,
+        ];
+    }
 }

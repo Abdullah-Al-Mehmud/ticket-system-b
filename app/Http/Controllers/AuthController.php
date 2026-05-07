@@ -93,7 +93,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => false,
-                'message' => 'Please verify your email first',
+                'message' => 'Please verify your email first, Check your email for verification link.',
             ], 403);
         }
 

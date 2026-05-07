@@ -10,10 +10,16 @@ class Ticket extends Model
         'user_id',
         'ticket_category_id',
         'quantity',
+        'coupon_code',
+        'original_amount',
+        'discount_applied',
+        'final_amount',
         'status',
         'is_verify',
     ];
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected static function boot(): void
@@ -24,10 +30,11 @@ class Ticket extends Model
             $model->id = self::generateUniqueKey(10);
         });
     }
+
     protected static function generateUniqueKey($length): string
     {
-        $characters = "ABCDEFGHOPQRSTUYZ0123456IJKLMN789VWX";
-        $key = "TKT_";
+        $characters = 'ABCDEFGHOPQRSTUYZ0123456IJKLMN789VWX';
+        $key = 'TKT_';
 
         for ($i = 0; $i < $length; $i++) {
             $key .= $characters[random_int(0, strlen($characters) - 1)];

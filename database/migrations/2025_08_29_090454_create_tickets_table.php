@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -16,7 +17,11 @@ return new class extends Migration {
             $table->uuid('ticket_category_id');
             $table->foreign('ticket_category_id')->references('id')->on('ticket_categories')->onDelete('cascade');
             $table->integer('quantity');
-            $table->enum('status', ["Confirmed", "Cancelled", "Refunded"])->default('Confirmed');
+            $table->string('coupon_code')->nullable();
+            $table->integer('original_amount')->default(0);
+            $table->integer('discount_applied')->default(0);
+            $table->integer('final_amount')->default(0);
+            $table->enum('status', ['Confirmed', 'Cancelled', 'Refunded'])->default('Confirmed');
             $table->boolean('is_verify')->default(false);
             $table->timestamps();
         });
