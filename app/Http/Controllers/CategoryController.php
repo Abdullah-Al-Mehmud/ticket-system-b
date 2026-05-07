@@ -26,7 +26,7 @@ class CategoryController extends Controller
                 $query->where('name', 'LIKE', '%' . $name . '%');
             }
 
-            $query->orderBy('id', 'desc');
+            $query->orderBy('created_at', 'desc');
 
             if ($getAll) {
                 $categories = $query->get();
@@ -86,7 +86,11 @@ class CategoryController extends Controller
 
     public function show($id)
     {
-        $category = Category::find($id);
+        $category = Category::query();
+
+        $category->orderBy('created_at', 'desc');
+
+        $category->find($id);
 
         if (!$category) {
             return response()->json(['status' => false, 'message' => 'Category not found'], 404);

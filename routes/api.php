@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\MailController;
@@ -85,4 +86,14 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/send-bookingTicket-email', [MailController::class, 'sendBookingEmail']);
     // Mail Test Routes
     Route::post('/send-mail', [MailController::class, 'send'])->name('send.mail');
+
+    // Coupon Management CRUD
+    Route::get('/coupon', [CouponController::class, 'getCoupon']);
+    Route::get('/coupon/{id}', [CouponController::class, 'getSingleCoupon']);
+    Route::post('/coupon', [CouponController::class, 'addCoupon']);
+    Route::patch('/coupon/{id}', [CouponController::class, 'updateCoupon']);
+    Route::delete('/coupon/{id}', [CouponController::class, 'deleteCoupon']);
 });
+
+// Public Coupon Validation
+Route::post('/coupon/validate', [CouponController::class, 'validateCoupon']);
